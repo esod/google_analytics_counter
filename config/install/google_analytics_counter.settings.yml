@@ -11,5 +11,6 @@ general_settings:
   advanced_date_checkbox: false
   fixed_start_date: ''
   fixed_end_date: ''
+  project_name: ''
   profile_id: ''
-  profile_id_prefill: ''
+  profile_ids: { }

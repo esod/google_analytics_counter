@@ -27,14 +27,6 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function newGaFeed();
 
   /**
-   * Get the redirect uri to redirect the google oauth request back to.
-   *
-   * @return string
-   *   The redirect Uri from the configuration or the path.
-   */
-  public function getRedirectUri();
-
-  /**
    * Get the list of available web properties.
    *
    * @return array
@@ -50,23 +42,27 @@ interface GoogleAnalyticsCounterManagerInterface {
   /**
    * Get the results from google.
    *
+   * @param string $profile_id
+   *   The profile id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch so that it can be queued.
    *
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($index = 0);
+  public function getChunkedResults($profile_id, $index = 0);
 
   /**
    * Update the path counts.
    *
    * This function is triggered by hook_cron().
    *
+   * @param string $profile_id
+   *   The profile id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch and update.
    */
-  public function updatePathCounts($index = 0);
+  public function updatePathCounts($profile_id, $index = 0);
 
   /**
    * Save the pageview count for a given node.
@@ -79,7 +75,7 @@ interface GoogleAnalyticsCounterManagerInterface {
   /**
    * Request report data.
    *
-   * @param array $params
+   * @param array $parameters
    *   An associative array containing:
    *   - profile_id: required [default='ga:profile_id']
    *   - metrics: required [ga:pageviews]
@@ -100,7 +96,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   A new GoogleAnalyticsCounterFeed object
    */
-  public function reportData($params = [], $cache_options = []);
+  public function reportData($parameters = [], $cache_options = []);
 
   /**
    * Get the count of pageviews for a path.

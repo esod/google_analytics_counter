@@ -161,6 +161,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   from the Google Analytics Core Reporting API.
    */
   public function newGaFeed() {
+    global $base_url;
     $config = $this->config;
 
     // If the access token is still valid, return an authenticated GAFeed.
@@ -191,8 +192,12 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // to the config page with an access code, complete the authentication.
     elseif (isset($_GET['code'])) {
       try {
+        $current_path = \Drupal::service('path.current')->getPath();
+        $uri = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
+        $redirect_uri = $base_url . $uri;
+
         $gac_feed = new GoogleAnalyticsCounterFeed();
-        $gac_feed->finishAuthentication($config->get('general_settings.client_id'), $config->get('general_settings.client_secret'), $this->getRedirectUri());
+        $gac_feed->finishAuthentication($config->get('general_settings.client_id'), $config->get('general_settings.client_secret'), $redirect_uri);
 
         $this->state->setMultiple([
           'google_analytics_counter.access_token' => $gac_feed->accessToken,
@@ -214,31 +219,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   }
 
   /**
-   * Get the redirect uri to redirect the google oauth request back to.
-   *
-   * @return string
-   *   The redirect Uri from the configuration or the path.
-   */
-  public function getRedirectUri() {
-
-    if ($this->config->get('general_settings.redirect_uri')) {
-      return $this->config->get('general_settings.redirect_uri');
-    }
-
-    $https = FALSE;
-    if (!empty($_SERVER['HTTPS'])) {
-      $https = $_SERVER['HTTPS'] == 'on';
-    }
-    $url = $https ? 'https://' : 'http://';
-    $url .= $_SERVER['SERVER_NAME'];
-    if ((!$https && $_SERVER['SERVER_PORT'] != '80') || ($https && $_SERVER['SERVER_PORT'] != '443')) {
-      $url .= ':' . $_SERVER['SERVER_PORT'];
-    }
-
-    return $url . Url::fromRoute('google_analytics_counter.admin_auth_form')->toString();
-  }
-
-  /**
    * Get the list of available web properties.
    *
    * @return array
@@ -247,7 +227,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   public function getWebPropertiesOptions() {
     // When not authenticated, there are no options.
     if (!$this->isAuthenticated()) {
-      return;
+      return $options = [];
     }
 
     $feed = $this->newGaFeed();
@@ -289,20 +269,27 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * Begin authentication to Google authentication page with the client_id.
    */
   public function beginGacAuthentication() {
+    global $base_url;
+    $current_path = \Drupal::service('path.current')->getPath();
+    $uri = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
+    $redirect_uri = $base_url . $uri;
+
     $gafeed = new GoogleAnalyticsCounterFeed();
-    $gafeed->beginAuthentication($this->config->get('general_settings.client_id'), $this->getRedirectUri());
+    $gafeed->beginAuthentication($this->config->get('general_settings.client_id'), $redirect_uri);
   }
 
   /**
    * Get the results from google.
    *
+   * @param string $profile_id
+   *   The profile id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch so that it can be queued.
    *
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($index = 0) {
+  public function getChunkedResults($profile_id, $index = 0) {
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step');
@@ -323,19 +310,19 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'max_results' => $config->get('general_settings.chunk_to_fetch'),
     ];
 
-    $cachehere = [
+    $cache_options = [
       'cid' => 'google_analytics_counter_' . md5(serialize($parameters)),
       'expire' => self::cacheTime(),
       'refresh' => FALSE,
     ];
 
-    return $this->reportData($parameters, $cachehere);
+    return $this->reportData($parameters, $cache_options);
   }
 
   /**
    * Request report data.
    *
-   * @param array $params
+   * @param array $parameters
    *   An associative array containing:
    *   - profile_id: required [default='ga:profile_id']
    *   - metrics: required [ga:pageviews]
@@ -356,7 +343,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed|object
    *   A new GoogleAnalyticsCounterFeed object
    */
-  public function reportData($params = [], $cache_options = []) {
+  public function reportData($parameters = [], $cache_options = []) {
     $config = $this->config;
 
     // The total number of published nodes.
@@ -370,7 +357,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       throw new \RuntimeException($this->t('The GoogleAnalyticsCounterFeed could not be initialized, is it authenticated?'));
     }
 
-    $ga_feed->queryReportFeed($params, $cache_options);
+    $ga_feed->queryReportFeed($parameters, $cache_options);
 
     //    DEBUG:
     //    echo '<pre>';
@@ -624,6 +611,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @param integer $nid
    *   The node id of the node for which to save the data.
+   *
+   * @throws \Exception
    */
   public function updateStorage($nid) {
     // Get all the aliases for a given node id.
@@ -659,6 +648,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   /**
    * Update the path counts.
    *
+   * @param string $profile_id
+   *   The profile_id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch and update.
    *
@@ -666,8 +657,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @throws \Exception
    */
-  public function updatePathCounts($index = 0) {
-    $feed = $this->getChunkedResults($index);
+  public function updatePathCounts($profile_id, $index = 0) {
+    $feed = $this->getChunkedResults($profile_id, $index);
 
     foreach ($feed->results->rows as $value) {
       // Remove Google Analytics pagepaths that are extremely long and meaningless.

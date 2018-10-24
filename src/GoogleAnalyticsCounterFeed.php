@@ -505,7 +505,7 @@ class GoogleAnalyticsCounterFeed {
    *
    * @return $this
    */
-  public function queryReportFeed($params = array(), $cache_options = array()) {
+  public function queryReportFeed($params = [], $cache_options = []) {
 
     // Provide defaults if the developer did not override them.
     $params += [
@@ -548,7 +548,7 @@ class GoogleAnalyticsCounterFeed {
     }
     $start_date = '';
     if (empty($params['start_date']) || !is_int($params['start_date'])) {
-      // Use the day that Google Analytics was released (1 Jan 2005).
+      // Use the day that Google Analytics was released 2005-01-01.
       $start_date = '2005-01-01';
     }
     elseif (is_int($params['start_date'])) {

@@ -35,15 +35,40 @@ function google_analytics_counter_cron() {
   // On some systems, cron could be every minute. Throttle updating with the
   // cron_interval on the settings form.
   // To avoid this interval, set cron_interval to 0.
-  if (\Drupal::time()->getRequestTime() >= \Drupal::state()->get('system.cron_last') + $interval) {
-    /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
-    $manager = Drupal::service('google_analytics_counter.manager');
-    $queue = \Drupal::queue('google_analytics_counter_worker');
+  if (!\Drupal::time()->getRequestTime() >= \Drupal::state()->get('system.cron_last') + $interval) {
+    return;
+  }
 
+  // Convert profile_id to an array.
+  $profile_id = $config->get('general_settings.profile_id');
+
+  $profile_id = [
+    $profile_id => $profile_id,
+  ];
+
+  // Combine profile_id and profile_ids.
+  $profile_ids = $config->get('general_settings.profile_ids');
+  $profile_ids = $profile_id + $profile_ids;
+
+  // Query Google and get results for one or more profile_ids.
+  _gac_cron_multiple_profile_ids($profile_ids);
+}
+
+/**
+ * Gets results from google with one or more profile_ids.
+ */
+function _gac_cron_multiple_profile_ids($profile_ids) {
+  $config = \Drupal::config('google_analytics_counter.settings');
+
+  /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
+  $manager = Drupal::service('google_analytics_counter.manager');
+  $queue = \Drupal::queue('google_analytics_counter_worker');
+
+  foreach ($profile_ids as $profile_id) {
     try {
       if ($manager->isAuthenticated() === TRUE) {
         // Fetch the first batch to see how many there are.
-        $results = $manager->getChunkedResults();
+        $results = $manager->getChunkedResults($profile_id);
         $total = $results->results->totalResults;
         for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
           // Add a queue item to fetch for all chunks.
@@ -59,11 +84,13 @@ function google_analytics_counter_cron() {
         }
       }
       else {
-        \Drupal::logger('google_analytics_counter')->alert('Google Analytics Counter is not authenticated.');
+        \Drupal::logger('google_analytics_counter')
+          ->alert('Google Analytics Counter is not authenticated.');
       }
     }
     catch (RuntimeException $e) {
-      \Drupal::logger('google_analytics_counter')->alert('Cron experienced a problem: ' . $e->getMessage());
+      \Drupal::logger('google_analytics_counter')
+        ->alert('Cron experienced a problem: ' . $e->getMessage());
     }
   }
 }

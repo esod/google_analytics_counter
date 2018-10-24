@@ -165,3 +165,13 @@ function google_analytics_counter_update_8004() {
     ->clear('general_settings.overwrite_statistics')
     ->save();
 }
+
+/**
+ * Issue #3003875: Remove profile_id_prefill configuration.
+ */
+function google_analytics_counter_update_8005() {
+  $config_factory = \Drupal::configFactory();
+  $config_factory->getEditable('google_analytics_counter.settings')
+    ->clear('general_settings.profile_id_prefill')
+    ->save();
+}

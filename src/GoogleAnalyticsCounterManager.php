@@ -299,7 +299,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $pointer = $step * $chunk + 1;
 
     $parameters = [
-      'profile_id' => 'ga:' . $config->get('general_settings.profile_id'),
+      'profile_id' => 'ga:' . $profile_id,
       'metrics' => ['ga:pageviews'],
       'dimensions' => ['ga:pagePath'],
       'start_date' => !empty($config->get('general_settings.fixed_start_date')) ? strtotime($config->get('general_settings.fixed_start_date')) : strtotime($config->get('general_settings.start_date')),
@@ -359,13 +359,11 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     $ga_feed->queryReportFeed($parameters, $cache_options);
 
-    //    DEBUG:
-    //    echo '<pre>';
-    //    // The returned object.
-    //    // print_r($ga_feed);
-    //    // Current Google Query.
-    //    print_r($ga_feed->results->selfLink);
-    //    echo '</pre>';
+    // DEBUG:
+    //// The returned object.
+    //   drush_print($ga_feed);
+    // Current Google Query.
+    drush_print($ga_feed->results->selfLink);
     //    exit;
 
     // Handle errors here too.

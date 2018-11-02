@@ -130,7 +130,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     // Google Query.
     $build['google_info']['google_query'] = [
       '#type' => 'details',
-      '#title' => $this->t('Most recent query to Google'),
+      '#title' => $this->t('Recent query to Google'),
       '#open' => FALSE,
     ];
 

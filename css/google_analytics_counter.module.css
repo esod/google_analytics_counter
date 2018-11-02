@@ -14,3 +14,7 @@
     display: inline-block;
   }
 }
+
+input#edit-field-google-analytics-counter-0-value {
+  background-color: #ececec;
+}

@@ -26,6 +26,11 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   use StringTranslationTrait;
 
   /**
+   * The table for the node__field_google_analytics_counter storage.
+   */
+  const TABLE = 'node__field_google_analytics_counter';
+
+  /**
    * The google_analytics_counter.settings config object.
    *
    * @var \Drupal\Core\Config\Config
@@ -316,6 +321,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'refresh' => FALSE,
     ];
 
+    drush_print_r($parameters);
+
     return $this->reportData($parameters, $cache_options);
   }
 
@@ -361,10 +368,9 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     // DEBUG:
     //// The returned object.
-    //   drush_print($ga_feed);
+    // drush_print($ga_feed);
     // Current Google Query.
-    drush_print($ga_feed->results->selfLink);
-    //    exit;
+     drush_print($ga_feed->results->selfLink);
 
     // Handle errors here too.
     if (!empty($ga_feed->error)) {
@@ -521,15 +527,61 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   Node id value.
    * @param int $sum_of_pageviews
    *   Count of page views.
+   * @param string $bundle
+   *   The content type of the node.
+   * @param int $vid
+   *   Revision id value.
    *
    * @throws \Exception
    */
-  protected function mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews) {
+  protected function mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid) {
     $this->connection->merge('google_analytics_counter_storage')
-      ->key(['nid' => $nid])
+      ->key('nid', $nid)
       ->fields(['pageview_total' => $sum_of_pageviews])
       ->execute();
+
+    // Update the Google Analytics Counter field if it exists.
+    if (!$this->connection->schema()->tableExists(static::TABLE)) {
+      return;
+    }
+
+    // To avoid integrity constraint violations, use update or insert on the field entity.
+    // To do. Try upsert or merge for better performance.
+    $query = $this->connection->select('node__field_google_analytics_counter', 'gac');
+    $query->fields('gac');
+    $query->condition('entity_id', $nid);
+    $entity_id = $query->execute()->fetchField();
+
+    if ($entity_id) {
+      $this->connection->update('node__field_google_analytics_counter')
+        ->fields([
+          'bundle' => $bundle,
+          'deleted' => 0,
+          'entity_id' => $nid,
+          'revision_id' => $vid,
+          'langcode' => 'en',
+          'delta' => 0,
+          'field_google_analytics_counter_value' => $sum_of_pageviews,
+        ])
+        ->condition('entity_id', $entity_id)
+        ->execute();
+    }
+    else {
+      $this->connection->insert('node__field_google_analytics_counter')
+        ->fields([
+          'bundle' => $bundle,
+          'deleted' => 0,
+          'entity_id' => $nid,
+          'revision_id' => $vid,
+          'langcode' => 'en',
+          'delta' => 0,
+          'field_google_analytics_counter_value' => $sum_of_pageviews,
+        ])
+        ->execute();
+    }
   }
+
+
 
   /**
    * Get the row count of a table, sometimes with conditions.
@@ -608,11 +660,15 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * Save the pageview count for a given node.
    *
    * @param integer $nid
-   *   The node id of the node for which to save the data.
+   *   The node id.
+   * @param string $bundle
+   *   The content type of the node.
+   * @param int $vid
+   *   Revision id value.
    *
    * @throws \Exception
    */
-  public function updateStorage($nid) {
+  public function updateStorage($nid, $bundle, $vid) {
     // Get all the aliases for a given node id.
     $aliases = [];
     $path = '/node/' . $nid;
@@ -635,19 +691,17 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // Todo: Could be brittle
     if ($nid == substr(\Drupal::configFactory()->get('system.site')->get('page.front'), 6)) {
       $sum_of_pageviews = $this->sumPageviews(['/']);
-      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews);
+      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
     }
     else {
       $sum_of_pageviews = $this->sumPageviews(array_unique($aliases));
-      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews);
+      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
     }
   }
 
   /**
    * Update the path counts.
    *
-   * @param string $profile_id
-   *   The profile_id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch and update.
    *
@@ -661,15 +715,17 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     foreach ($feed->results->rows as $value) {
       // Remove Google Analytics pagepaths that are extremely long and meaningless.
       $page_path = substr(htmlspecialchars($value['pagePath'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 0, 2047);
+
+      // Update the Google Analytics Counter.
       $this->connection->merge('google_analytics_counter')
-        ->key(['pagepath_hash' => md5($page_path)])
+        ->key('pagepath_hash', md5($page_path))
         ->fields([
           // Escape the path see https://www.drupal.org/node/2381703
           'pagepath' => $page_path,
-          'pageviews' => SafeMarkup::checkPlain($value['pageviews']),
+          'pageviews' => $value['pageviews'],
         ])
         ->execute();
-    }
+      }
 
     // Log the results.
     $this->logger->info($this->t('Saved @count paths from Google Analytics into the database.', ['@count' => count($feed->results->rows)]));

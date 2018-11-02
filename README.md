@@ -1,7 +1,17 @@
 Google Analytics Counter 8.x-1.0-alpha1
 ---------------------------------------
 
-### About this Module
+Table of Contents
+-----------------
+
+* Introduction
+* Goals
+* Installation
+* Create a Project in Google.
+* The custom Google Analytics Counter field.
+* Project status
+
+### Introduction
 
 Google Analytics Counter is a scalable, lightweight page view counter drawing
 on data collected by Google Analytics.
@@ -16,11 +26,16 @@ The secondary use for this module is to:
 
 ### Goals
 
-- A themable block in Drupal which displays Google Analytics Pageviews.
 - A comprehensive and understandable solution to storing Google Analytics Pageviews in Drupal.
-- Google Analytics Counter data is available in views. (Drupal 7. Drupal 8 under development.)
+- A themable block in Drupal which displays Google Analytics Pageviews.
+- A filter which adds the pageviews inline.
+- Make the pageviews available in views.
+  - This is possible two ways:
+  - By creating views based on the Google Analytics Counter
+  - By adding a custom field to a content type which is populated during cron runs
+    which can then be added to views like any other field.
 
-### Installing the Google Analytics Counter Module
+### Installation
 
 1. Copy/upload the google analytics counter module to the modules directory of
    your Drupal installation.
@@ -32,44 +47,48 @@ The secondary use for this module is to:
 
 4. Go to the authentication page. (/admin/config/system/google-analytics-counter/authentication)
 
-5. Add your Google Project Client ID, Client Secret and Authorized redirect URI. 
+5. Add your Google Project Client ID, Client Secret and Authorized Redirect URI. 
    See "Creating a Project in Google" in the next section of this document 
    for more information on setting up Google Analytics.
 
-6. If you know which view you will be using you can add its ID to the
-   'Prefill a Google View' field.
-
-7. Optionally add your Google Project's machine name. This field helps to take 
+6. Optionally add your Google Project's machine name. This field helps to take 
    you directly to your Analytics API page to view Google's quotas.
 
-8. Click Save configuration.
+7. Click Save configuration.
 
-9. Click the large button at the top of the page labeled 'Authenticate'.
+8. Click the large button at the top of the page labeled 'Authenticate With Google'.
 
-10. Select the google account to which you would like to authenticate.
+9. Select the google account to which you would like to authenticate.
 
-11. Fill in credentials if requested by Google.
+10. Fill in credentials if requested by Google.
     Click Allow.
 
-12. If all goes well, you will be returned to the authentication page. 
+11. If all goes well, you will be returned to Authorized REdirect URI which
+    should be the authentication page. 
     (/admin/config/system/google-analytics-counter/authentication)
-    If you did not prefill a Google View ID, select a view  
-    from the select list under Google Views IDs. Another way to tell
+    Select a view from the select list in Google Views. Another way to tell
     if all has gone well with authentication is if you see your Google Analytics
-    profiles listed in Views IDs.
+    profiles listed in Google Vviews. If you did not successfully authenticate 
+    with Google the only option in Google Views is 'Unauthenticated'.
     Click Save configuration.
 
-13. Go to the Dashboard (/admin/config/system/google-analytics-counter/dashboard)
+12. Go to the Dashboard (/admin/config/system/google-analytics-counter/dashboard)
 
-14. Note: most of the numbers are 0 until you run cron.
+13. Note: most of the numbers are 0 until you run cron.
 
-15. Run cron. Generally speaking, it is a good idea to run cron continuously
+14. Run cron. Generally speaking, it is a good idea to run cron continuously
     with a scheduler like Jenkins to keep pageviews data up to date.
 
-16. Place a Google Analytics Counter block on your site.
-    (/admin/structure/block)
+15. Place a Google Analytics Counter block on your site.
+    (/admin/structure/block).
 
-### Creating a Project in Google
+16. Or Enable the text filter (More to come).
+
+17. Or Add the custom Google Analytics Counter field to a content type and use
+    the custom field like any other node field; e.g. view displays and views.
+    See 'The custom Google Analytics Counter field.' below for more information.
+
+### Create a Project in Google.
 
 1. Go to https://console.developers.google.com/cloud-resource-manager
    Click Create project.
@@ -115,6 +134,53 @@ The secondary use for this module is to:
 13. Copy your client ID client secret, and Authorized redirect URIs from Google
      and add them to analytics authentication form in the module.
      (/admin/config/system/google-analytics-counter/authentication).
+
+### The custom Google Analytics Counter field.
+
+A custom Google Analytics Counter field has been added to version 8.x-3.0-alpha4
+and above. Having the Google pageviews in a custom fields makes adding Google
+pageviews to Drupal views the same as adding any other node field to a view.
+
+After installing version 8.x-3.0-alpha4 or above or running the module updates
+for existing installations with `drush updatedb` The custom Google Analytics
+Counter field is added to the basic page content type.
+See /admin/structure/types/manage/page/fields. 
+
+Note that on installation or update the custom field is disabled on the Manage
+form display tab and the Manage display tab for the basic page content type.
+To enable the custom field on the basic page content type, drag the field out of
+the Disabled section of the respective tab and Save. Likewise do the same on
+other contents type to which you add the custom field.
+
+The custom field can also be removed from the system without concern. The module
+will then store analytics data in the custom tables only.
+
+#### To add the custom field to other content types, Follow these steps.
+
+1. Go to a content type's Manage fields Tab.
+   For example /admin/structure/types/manage/article/fields.
+
+2. Click +Add field.
+
+3. Re-use the existing field by clicking `- Select an existing field -` and
+   selecting the custom field `Text (plain): field_google_analytics_counter`.
+   Change the field Label as you see fit.
+
+4. Click Save and continue.
+   Add Help text such as `This field stores Google Analytics pageviews.`
+   or anything else as you see fit. Or leave the Help text blank.
+
+5. No need to add a Default value since the field is populated with Data from Google.
+   Adding 0 is okay for now, although I'm planning on making this field readonly
+   in future releases. See /admin/structure/types/manage/page/fields/node.page.field_google_analytics_counter
+   for an example of Help text and a Default value.
+
+6. Click Save settings and add the field to Manage form display and Manage display
+   if you would like to see the field's value in the node edit form or on the
+   node's view.
+
+7. Now that the custom field has been added to the content type, the pageviews
+   can be added to Drupal views like any other node field.
 
 ### Project Status
 

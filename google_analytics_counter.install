@@ -5,7 +5,10 @@
  * Update, and uninstall functions for the Google Analytics Counter module.
  */
 
+use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Url;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\field\Entity\FieldConfig;
 
 /**
  * Implements hook_requirements().
@@ -125,15 +128,50 @@ function google_analytics_counter_uninstall() {
   // Revoke the state values.
   $manager->revoke();
 
-  // Remove queued workers from the database 200,000 workers at a time.
+  // Remove queued items from the database.
+  _google_analytics_counter_remove_queued_items();
+
+  // Uninstall the Google Analytics Counter field.
+  $bundles = ['node'];
+
+  $fields['field_google_analytics_counter'] = [
+    'entity_type' => 'node',
+  ];
+
+  // Delete the field config.
+  foreach ($bundles as $bundle) {
+    foreach ($fields as $field_name => $config) {
+      $field = FieldConfig::loadByName($config['entity_type'], $bundle, $field_name);
+      if (!empty($field)) {
+        $field->delete();
+      }
+    }
+  }
+
+  // Delete the field storage config.
+  foreach ($fields as $field_name => $config) {
+    $field_storage = FieldStorageConfig::loadByName($config['entity_type'], $field_name);
+    if (!empty($field_storage)) {
+      $field_storage->delete();
+    }
+  }
+}
+
+/**
+ * Remove queued items from the database.
+ */
+function _google_analytics_counter_remove_queued_items() {
   $quantity = 200000;
-  $queued_workers = \Drupal::database()->query("SELECT COUNT(*) FROM {queue} WHERE name = 'google_analytics_counter_worker'")->fetchField();
+  $queued_workers = \Drupal::database()
+    ->query("SELECT COUNT(*) FROM {queue} WHERE name = 'google_analytics_counter_worker'")
+    ->fetchField();
   $chunks = $queued_workers / $quantity;
 
   // Todo: get $t_arg working.
   $t_arg = ['@quantity' => $quantity];
   for ($x = 0; $x <= $chunks; $x++) {
-    \Drupal::database()->query("DELETE FROM {queue} WHERE name = 'google_analytics_counter_worker' LIMIT 200000");
+    \Drupal::database()
+      ->query("DELETE FROM {queue} WHERE name = 'google_analytics_counter_worker' LIMIT 200000");
   }
 }
 
@@ -174,4 +212,32 @@ function google_analytics_counter_update_8005() {
   $config_factory->getEditable('google_analytics_counter.settings')
     ->clear('general_settings.profile_id_prefill')
     ->save();
+}
+
+/**
+ * Issue #3009673: Add the Google Analytics Counter field to existing installations.
+ */
+function google_analytics_counter_update_8006() {
+  // Obtain configuration from yaml files
+  $config_path = 'modules/contrib/google_analytics_counter/config/optional';
+  $source      = new FileStorage($config_path);
+
+  // Obtain the storage manager for field storage bases.
+  // Create a new field from the yaml configuration and save.
+  \Drupal::entityTypeManager()->getStorage('field_storage_config')
+    ->create($source->read('field.storage.node.field_google_analytics_counter'))
+    ->save();
+
+  // Obtain the storage manager for field instances.
+  // Create a new field instance from the yaml configuration and save.
+  \Drupal::entityTypeManager()->getStorage('field_config')
+    ->create($source->read('field.field.node.page.field_google_analytics_counter'))
+    ->save();
+}
+
+/**
+ * Issue #3009673: Remove stale queued items from the database.
+ */
+function google_analytics_counter_update_8007() {
+  _google_analytics_counter_remove_queued_items();
 }

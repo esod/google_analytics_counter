@@ -122,7 +122,15 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       }
     }
 
-    $markup_description = ($this->manager->isAuthenticated() === TRUE) ? '<p>' . $this->t('Client ID, Client Secret, and Authorized redirect URI can only be changed when not authenticated.') . '</p>' : '<ol><li>' . $this->t('Fill in your Client ID, Client Secret, Authorized redirect URI, and project name, if available.') . '</li><li>' . $this->t('Save configuration.') . '</li><li>' . $this->t('Authenticate with Google Analytics.') . '</li><li>' . $this->t('Finally, select which Analytics views to save in Drupal and save configuration again.') . '</li></ol>';
+    $markup_description = ($this->manager->isAuthenticated() === TRUE) ? '<p>' . $this->t('Client ID, Client Secret, and Authorized redirect URI can only be changed when not authenticated.') .
+      '<br />' . $this->t('Now that you are authenticated with Google Analytics, select a ') .  '<strong>' . $this->t('Google View') . '</strong>' . $this->t(' to collect analytics from and click Save configuration.') . '</p>' :
+      '<ol><li>' . $this->t('Fill in your Client ID, Client Secret, Authorized Redirect URI, and Google Project Name.') .
+      '</li><li>' . $this->t('Save configuration.') .
+      '</li><li>' . $this->t('Authenticate with Google Analytics:') .
+      '</li><ul><li>' .  $this->t('Follow the instructions in the README.md to set up a project in Google Analytics.') .
+      '</li><li>' .  $this->t('And then click the Authenticate with Google Analytics button above.') .
+      '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select a ') . '<strong>' . $this->t('Google View') . '</strong>' . $this->t(" to collect analytics from and click Save configuration.") .
+      '</li><ul><li>' .  $this->t("If you are not authenticated, 'Unauthenticated' is the only available option for ") .  '<strong>' . $this->t('Google View') . '</strong>.</li></ul></ol>';
 
     $form['setup'] = [
       '#type' => 'markup',
@@ -147,7 +155,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
 
     $form['client_secret'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Client secret'),
+      '#title' => $this->t('Client Secret'),
       '#default_value' => $config->get('general_settings.client_secret'),
       '#size' => 90,
       '#description' => $this->t('Create the Client secret in the <a href=:href target="_blank">@href</a>.', $t_args),
@@ -160,7 +168,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
     $description = ($this->manager->isAuthenticated() === TRUE) ? $this->t('The path that users are redirected to after they have authenticated with Google.') : $this->t('The path that users are redirected to after they have authenticated with Google.<br /> Default: <strong>@default_uri</strong>', ['@default_uri' => $base_url . $uri]);
     $form['redirect_uri'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Authorized redirect URI'),
+      '#title' => $this->t('Authorized Redirect URI'),
       '#default_value' => $config->get('general_settings.redirect_uri'),
       '#size' => 90,
       '#description' => $description,
@@ -178,23 +186,17 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => $this->t('Google Project Name'),
       '#default_value' => $config->get('general_settings.project_name'),
-      '#description' => $this->t("Optionally add your Google Project's machine name. Machine names are written like <em>project-name</em>. This field helps to take you directly to your <a href=:href>@href</a> page to view quotas. To set up your Google Project, see the README.md included with this module.", $t_args),
+      '#description' => $this->t("Optionally add your Google Project's machine name. Machine names are written like <em>project-name</em>. This field helps to take you directly to your <a href=:href>@href</a> page to view quotas.", $t_args),
       '#weight' => 14,
-    ];
-
-    $t_args = [
-      ':href' => Url::fromRoute('google_analytics_counter.admin_dashboard_form', [], ['absolute' => TRUE])
-        ->toString(),
-      '@href' => 'dashboard',
     ];
 
     $options = !empty($this->manager->getWebPropertiesOptions()) ? $this->manager->getWebPropertiesOptions() : [$config->get('general_settings.profile_id') => 'Unauthenticated'];
     $form['profile_id'] = [
       '#type' => 'select',
-      '#title' => $this->t("Google View. The <a href=:href>@href</a>'s values are derived from this view.", $t_args),
+      '#title' => $this->t("Google View"),
       '#options' => $options,
       '#default_value' => $config->get('general_settings.profile_id'),
-      '#description' => $this->t("Choose a Google Analytics view. If you are not authenticated, 'Unauthenticated' is the only available option.", $t_args),
+      '#description' => $this->t("Choose a Google Analytics view. If you are not authenticated, 'Unauthenticated' is the only available option."),
       '#weight' => 15,
     ];
 

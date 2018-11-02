@@ -129,7 +129,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
-    $t_args = [
+    $t_arg = [
       '%queue_count' => $this->manager->getCount('queue'),
     ];
     $form['queue_time'] = [
@@ -139,7 +139,8 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#min' => 1,
       '#max' => 10000,
       '#required' => TRUE,
-      '#description' => $this->t('%queue_count items are in the queue. The number of items in the queue should be 0 after cron runs.<br /><strong>Note:</strong> Having 0 items in the queue confirms that pageview counts are up to date. Increase Queue Time to process all the queued items. Default: 120 seconds.', $t_args),
+      '#description' => $this->t('%queue_count items are in the queue. The number of items in the queue should be 0 after cron runs.', $t_arg) .
+        '<br /><strong>' . $this->t('Note:') .'</strong>'. $this->t(' Having 0 items in the queue confirms that pageview counts are up to date. Increase Queue Time to process all the queued items during a single cron run. Default: 120 seconds.'),
     ];
 
     // Google Analytics start date settings.

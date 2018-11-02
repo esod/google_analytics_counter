@@ -5,8 +5,10 @@
  * Basic functions for this module.
  */
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
+use Drupal\node\Entity\Node;
 
 /**
  * Implements hook_help().
@@ -50,6 +52,9 @@ function google_analytics_counter_cron() {
   $profile_ids = $config->get('general_settings.profile_ids');
   $profile_ids = $profile_id + $profile_ids;
 
+  // DEBUG:
+  // drush_print_r($profile_ids);exit;
+
   // Query Google and get results for one or more profile_ids.
   _gac_cron_multiple_profile_ids($profile_ids);
 }
@@ -63,29 +68,37 @@ function _gac_cron_multiple_profile_ids($profile_ids) {
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = Drupal::service('google_analytics_counter.manager');
   $queue = \Drupal::queue('google_analytics_counter_worker');
+  if (!$manager->isAuthenticated()) {
+    \Drupal::logger('google_analytics_counter')->alert('Google Analytics Counter is not authenticated.');
+    return;
+  }
+
 
   foreach ($profile_ids as $profile_id) {
     try {
-      if ($manager->isAuthenticated() === TRUE) {
-        // Fetch the first batch to see how many there are.
-        $results = $manager->getChunkedResults($profile_id);
-        $total = $results->results->totalResults;
-        for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
-          // Add a queue item to fetch for all chunks.
-          $queue->createItem(['type' => 'fetch', 'index' => $index]);
-        }
+      // Fetch the first batch to see how many there are.
+      $results = $manager->getChunkedResults($profile_id);
 
-        // Queue all the published nodes to be counted.
-        $ids = \Drupal::entityQuery('node')
-          ->condition('status', NodeInterface::PUBLISHED)
-          ->execute();
-        foreach ($ids as $nid) {
-          $queue->createItem(['type' => 'count', 'nid' => $nid]);
-        }
+      // Queue the chunks.
+      $total = $results->results->totalResults;
+      for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
+        // Add a queue item to fetch for all chunks.
+        $queue->createItem(['type' => 'fetch', 'index' => $index]);
       }
-      else {
-        \Drupal::logger('google_analytics_counter')
-          ->alert('Google Analytics Counter is not authenticated.');
+
+      // Queue all the published nodes.
+      $database = \Drupal::database();
+      $select = $database->select('node_field_data', 'nfd');
+      $select->fields('nfd', ['nid', 'type', 'vid']);
+      $select->condition('status', NodeInterface::PUBLISHED);
+      $result = $select->execute();
+      while ($record = $result->fetchAssoc()) {
+        $queue->createItem([
+          'type' => 'count',
+          'nid' => $record['nid'],
+          'bundle' => $record['type'],
+          'vid' => $record['vid'],
+        ]);
       }
     }
     catch (RuntimeException $e) {
@@ -121,5 +134,26 @@ function google_analytics_counter_page_attachments(&$page) {
   $theme = \Drupal::theme()->getActiveTheme()->getName();
   if (in_array($theme, ['bartik', 'seven'])) {
     $page['#attached']['library'][] = 'google_analytics_counter/google_analytics_counter';
+  }
+}
+
+/******************************************************************************/
+// Form alter hooks
+/******************************************************************************/
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ */
+function google_analytics_counter_form_node_form_alter(&$form, FormStateInterface $form_state) {
+  // Alter the field state.
+  isset($form['field_google_analytics_counter']) ? $form['field_google_analytics_counter']['widget'][0]['value']['#attributes']['readonly'] = 'readonly' : NULL;
+
+
+  // Display Google Analytics Counter field only to roles with the permission.
+  $fields_requiring_permission = [
+    'field_google_analytics_counter',
+  ];
+  foreach ($fields_requiring_permission as $field_requiring_permission) {
+    $form[$field_requiring_permission]['#access'] = \Drupal::currentUser()->hasPermission('administer google analytics counter');
   }
 }

@@ -271,7 +271,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     $build['drupal_info']['last_cron_run'] = [
       '#type' => 'html_tag',
       '#tag' => 'p',
-      '#value' => $this->t("Cron's last run: %time ago.", ['%time' => $this->dateFormatter->formatTimeDiffSince($this->state->get('system.cron_last'))]),
+      '#value' => $this->t("Cron's last successful run: %time ago.", ['%time' => $this->dateFormatter->formatTimeDiffSince($this->state->get('system.cron_last'))]),
     ];
 
     $temp = $this->state->get('google_analytics_counter.cron_next_execution') - $this->time->getRequestTime();

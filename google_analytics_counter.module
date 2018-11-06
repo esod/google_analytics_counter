@@ -73,7 +73,6 @@ function _gac_cron_multiple_profile_ids($profile_ids) {
     return;
   }
 
-
   foreach ($profile_ids as $profile_id) {
     try {
       // Fetch the first batch to see how many there are.

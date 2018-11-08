@@ -752,12 +752,12 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * Prints a warning message when not authenticated.
    */
   public function notAuthenticatedMessage() {
-    $t_args = [
+    $t_arg = [
       ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
         ->toString(),
-      '@href' => 'authenticate here',
+      '@href' => 'Authentication',
     ];
-    $this->messenger->addWarning($this->t('Google Analytics have not been authenticated! Google Analytics Counter cannot fetch any new data. Please <a href=:href>@href</a>.', $t_args));
+    $this->messenger->addWarning($this->t('Google Analytics have not been authenticated! Google Analytics Counter cannot fetch any new data. Please authenticate with Google from the <a href=:href>@href</a> page.', $t_arg));
   }
 
   /**

@@ -122,8 +122,18 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       }
     }
 
+    $t_arg = [
+      ':href' => Url::fromRoute('google_analytics_counter.admin_dashboard_form', [], ['absolute' => TRUE])
+        ->toString(),
+      '@href' => 'Dashboard',
+    ];
     $markup_description = ($this->manager->isAuthenticated() === TRUE) ? '<p>' . $this->t('Client ID, Client Secret, and Authorized redirect URI can only be changed when not authenticated.') .
-      '<br />' . $this->t('Now that you are authenticated with Google Analytics, select a ') .  '<strong>' . $this->t('Google View') . '</strong>' . $this->t(' to collect analytics from and click Save configuration.') . '</p>' :
+      '<ol><li>' . $this->t('Now that you are authenticated with Google Analytics, select a') .  '<strong>' . $this->t(' Google View ') . '</strong>' . $this->t('and').  '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t(' if you wish, from the fields below.') .
+      '</li><li>' . $this->t('Save configuration.') .
+      '</li><li>' . $this->t('On the next cron job, analytics from the Google View field and the Additional Google Views field will be saved to Drupal.') .
+      '</li><ul><li>' . $this->t('Information on the <a href=:href>@href</a> page is derived from the Google View field, not the Additional Google Views field.', $t_arg) .
+      '</li><li>' . $this->t('After cron runs, check pageviews for all selected Google Views on the <a href=:href>@href</a>  page in the Top Twenty Results section.', $t_arg) .
+      '</li></ul></ol></p>' :
       '<ol><li>' . $this->t('Fill in your Client ID, Client Secret, Authorized Redirect URI, and Google Project Name.') .
       '</li><li>' . $this->t('Save configuration.') .
       '</li><li>' . $this->t('Authenticate with Google Analytics:') .

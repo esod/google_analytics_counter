@@ -125,8 +125,15 @@ function google_analytics_counter_schema() {
 function google_analytics_counter_uninstall() {
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = Drupal::service('google_analytics_counter.manager');
+
   // Revoke the state values.
   $manager->revoke();
+
+  // Revoke the profile state values.
+  $profile_ids = \Drupal::state()->get('google_analytics_counter.profile_ids');
+  foreach ($profile_ids as $profile_id) {
+    $manager->revokeProfiles($profile_id);
+  }
 
   // Remove queued items from the database.
   _google_analytics_counter_remove_queued_items();
@@ -240,4 +247,45 @@ function google_analytics_counter_update_8006() {
  */
 function google_analytics_counter_update_8007() {
   _google_analytics_counter_remove_queued_items();
+}
+
+/**
+ * Update state values to include profile ids.
+ */
+function google_analytics_counter_update_8008() {
+  $config = \Drupal::config('google_analytics_counter.settings');
+
+  // Convert profile_id to an array.
+  $profile_id = $config->get('general_settings.profile_id');
+
+  $profile_id = [
+    $profile_id => $profile_id,
+  ];
+
+  // Combine profile_id and profile_ids.
+  $profile_ids = $config->get('general_settings.profile_ids');
+  $profile_ids = $profile_id + $profile_ids;
+
+  // Save $profiles_ids in case the module is uninstalled.
+  \Drupal::state()->set('google_analytics_counter.profile_ids', $profile_ids);
+
+
+  // Revoke the profile state values.
+  $profile_ids = \Drupal::state()->get('google_analytics_counter.profile_ids');
+  foreach ($profile_ids as $profile_id) {
+
+    $gac_states = [
+      'google_analytics_counter.data_last_refreshed' => 'google_analytics_counter.data_last_refreshed_' . $profile_id,
+      'google_analytics_counter.data_step' => 'google_analytics_counter.data_step_' . $profile_id,
+      'google_analytics_counter.most_recent_query' => 'google_analytics_counter.most_recent_query_' . $profile_id,
+      'google_analytics_counter.total_pageviews' => 'google_analytics_counter.total_pageviews_' . $profile_id,
+      'google_analytics_counter.total_paths' => 'google_analytics_counter.total_paths_' . $profile_id,
+    ];
+
+    foreach ($gac_states as $key => $value) {
+      $gac_data = \Drupal::state()->get($key);
+      \Drupal::state()->set($value, $gac_data);
+      \Drupal::state()->delete($key);
+    }
+  }
 }

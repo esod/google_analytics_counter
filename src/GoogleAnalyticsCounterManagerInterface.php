@@ -102,7 +102,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   A new GoogleAnalyticsCounterFeed object
    */
-  public function reportData($parameters = [], $cache_options = []);
+  public function reportData(array $parameters, array $cache_options);
 
   /**
    * Get the count of pageviews for a path.
@@ -116,9 +116,17 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function displayGaCount($path);
 
   /**
-   * Programatically revoke token.
+   * Programmatically revoke token.
    */
   public function revoke();
+
+  /**
+   * Programmatically revoke token.
+   *
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   */
+  public function revokeProfiles($profile_id);
 
   /**
    * Get the row count of a table, sometimes with conditions.

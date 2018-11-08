@@ -8,7 +8,6 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
-use Drupal\node\Entity\Node;
 
 /**
  * Implements hook_help().
@@ -52,6 +51,9 @@ function google_analytics_counter_cron() {
   $profile_ids = $config->get('general_settings.profile_ids');
   $profile_ids = $profile_id + $profile_ids;
 
+  // Store $profiles_ids here since they may have been changed.
+  \Drupal::state()->set('google_analytics_counter.profile_ids', $profile_ids);
+
   // DEBUG:
   // drush_print_r($profile_ids);exit;
 
@@ -61,8 +63,10 @@ function google_analytics_counter_cron() {
 
 /**
  * Gets results from google with one or more profile_ids.
+ * @param array $profile_ids
+ *   The profile ids used for google query.
  */
-function _gac_cron_multiple_profile_ids($profile_ids) {
+function _gac_cron_multiple_profile_ids(array $profile_ids) {
   $config = \Drupal::config('google_analytics_counter.settings');
 
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
@@ -73,24 +77,37 @@ function _gac_cron_multiple_profile_ids($profile_ids) {
     return;
   }
 
+  // Save the total number of published nodes.
+  $num_rows = $manager->getCount('node_field_data');
+  \Drupal::state()->set('google_analytics_counter.total_nodes', $num_rows);
+
+  drush_print($num_rows);
+
+  // Select all the published nodes to create queue items.
+  $database = \Drupal::database();
+  $query = $database->select('node_field_data', 'nfd');
+  $query->fields('nfd', ['nid', 'type', 'vid']);
+  $query->condition('status', NodeInterface::PUBLISHED);
+  $result = $query->execute();
+
   foreach ($profile_ids as $profile_id) {
     try {
       // Fetch the first batch to see how many there are.
       $results = $manager->getChunkedResults($profile_id);
+      drush_print($results);
 
-      // Queue the chunks.
+      // Create queue items from the chunks.
       $total = $results->results->totalResults;
+      drush_print($total);
       for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
         // Add a queue item to fetch for all chunks.
-        $queue->createItem(['type' => 'fetch', 'index' => $index]);
+        $queue->createItem([
+          'type' => 'fetch',
+          'index' => $index,
+        ]);
       }
 
-      // Queue all the published nodes.
-      $database = \Drupal::database();
-      $select = $database->select('node_field_data', 'nfd');
-      $select->fields('nfd', ['nid', 'type', 'vid']);
-      $select->condition('status', NodeInterface::PUBLISHED);
-      $result = $select->execute();
+      // Create queue items for all the published nodes.
       while ($record = $result->fetchAssoc()) {
         $queue->createItem([
           'type' => 'count',

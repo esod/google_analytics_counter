@@ -350,14 +350,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed|object
    *   A new GoogleAnalyticsCounterFeed object
    */
-  public function reportData($parameters = [], $cache_options = []) {
+  public function reportData(array $parameters, array $cache_options) {
     $config = $this->config;
-
-    // The total number of published nodes.
-    $query = \Drupal::entityQuery('node');
-    $query->condition('status', NodeInterface::PUBLISHED);
-    $total_nodes = $query->count()->execute();
-    $this->state->set('google_analytics_counter.total_nodes', $total_nodes);
 
     $ga_feed = $this->newGaFeed();
     if (!$ga_feed) {
@@ -392,19 +386,20 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       }
     }
 
-    // The total number of pageViews for this profile
-    // from start_date to end_date.
-    $this->state->set('google_analytics_counter.total_pageviews', $ga_feed->results->totalsForAllResults['pageviews']);
+    // Trim 'ga:' from the profile for cleaner storage.
+    $profile_id = substr($parameters['profile_id'], 3);
 
-    // The total number of pagePaths for this profile
-    // from start_date to end_date.
-    $this->state->set('google_analytics_counter.total_paths', $ga_feed->results->totalResults);
+    // The last time the Data was refreshed by Google. Not always available from Google.
+    $this->state->set('google_analytics_counter.data_last_refreshed_' . $profile_id, $ga_feed->results->dataLastRefreshed);
 
-    // The most recent query to Google. Helpful for debugging.
-    $this->state->set('google_analytics_counter.most_recent_query', $ga_feed->results->selfLink);
+    // The first selfLink query to Google. Helpful for debugging from the dashboard.
+    $this->state->set('google_analytics_counter.most_recent_query_' . $profile_id, $ga_feed->results->selfLink);
 
-    // The last time the Data was refreshed by Google.
-    $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
+    // The total number of pageViews for this profile from start_date to end_date.
+    $this->state->set('google_analytics_counter.total_pageviews_' . $profile_id, $ga_feed->results->totalsForAllResults['pageviews']);
+
+    // The total number of pagePaths for this profile from start_date to end_date.
+    $this->state->set('google_analytics_counter.total_paths_' . $profile_id, $ga_feed->results->totalResults);
 
     // How many results to ask from Google Analytics in one request.
     // Default of 1000 to fit most systems
@@ -413,7 +408,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     // In case there are more than $chunk path/counts to retrieve from
     // Google Analytics, do one chunk at a time and register that in $step.
-    $step = $this->state->get('google_analytics_counter.data_step');
+    $step = $this->state->get('google_analytics_counter.data_step' . $parameters['profile_id']);
 
     // Which node to look for first. Must be between 1 - infinity.
     $pointer = $step * $chunk + 1;
@@ -438,7 +433,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       $new_step = 0;
     }
 
-    $this->state->set('google_analytics_counter.data_step', $new_step);
+    $this->state->set('google_analytics_counter.data_step_' . $parameters['profile_id'], $new_step);
 
     return $ga_feed;
   }
@@ -499,20 +494,31 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   }
 
   /**
-   * Programmatically revoke states.
+   * Programmatically revoke stored state values.
    */
   public function revoke() {
     $this->state->deleteMultiple([
       'google_analytics_counter.access_token',
       'google_analytics_counter.cron_next_execution',
-      'google_analytics_counter.data_last_refreshed',
-      'google_analytics_counter.data_step',
       'google_analytics_counter.expires_at',
-      'google_analytics_counter.most_recent_query',
       'google_analytics_counter.refresh_token',
       'google_analytics_counter.total_nodes',
-      'google_analytics_counter.total_pageviews',
-      'google_analytics_counter.total_paths',
+    ]);
+  }
+
+  /**
+   * Programmatically revoke stored profile state values.
+   *
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   */
+  public function revokeProfiles($profile_id) {
+    $this->state->deleteMultiple([
+      'google_analytics_counter.data_last_refreshed_' . $profile_id,
+      'google_analytics_counter.data_step_' . $profile_id,
+      'google_analytics_counter.most_recent_query_' . $profile_id,
+      'google_analytics_counter.total_pageviews_' . $profile_id,
+      'google_analytics_counter.total_paths_' . $profile_id,
     ]);
   }
 
@@ -603,6 +609,11 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         break;
       case 'google_analytics_counter_storage_all_nodes':
         $query = $this->connection->select('google_analytics_counter_storage', 't');
+        break;
+      case 'node_field_data':
+        $query = $this->connection->select('node_field_data', 'nfd');
+        $query->fields('nfd');
+        $query->condition('status', NodeInterface::PUBLISHED);
         break;
       case 'queue':
         $query = $this->connection->select('queue', 'q');
@@ -704,6 +715,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @param int $index
    *   The index of the chunk to fetch and update.
+   * @param string $profile_id
+   *   The profile id used in the google query.
    *
    * This function is triggered by hook_cron().
    *

@@ -81,20 +81,19 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
   $num_rows = $manager->getCount('node_field_data');
   \Drupal::state()->set('google_analytics_counter.total_nodes', $num_rows);
 
-  drush_print($num_rows);
-
-  // Select all the published nodes to create queue items.
-  $database = \Drupal::database();
-  $query = $database->select('node_field_data', 'nfd');
-  $query->fields('nfd', ['nid', 'type', 'vid']);
-  $query->condition('status', NodeInterface::PUBLISHED);
-  $result = $query->execute();
+//  drush_print($num_rows);
 
   foreach ($profile_ids as $profile_id) {
+    // Select all the published nodes and create queue items for each $profile_id.
+    $database = \Drupal::database();
+    $query = $database->select('node_field_data', 'nfd');
+    $query->fields('nfd', ['nid', 'type', 'vid']);
+    $query->condition('status', NodeInterface::PUBLISHED);
+    $result = $query->execute();
+
     try {
       // Fetch the first batch to see how many there are.
       $results = $manager->getChunkedResults($profile_id);
-      drush_print($results);
 
       // Create queue items from the chunks.
       $total = $results->results->totalResults;
@@ -104,6 +103,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
         $queue->createItem([
           'type' => 'fetch',
           'index' => $index,
+          'profile' => $profile_id,
         ]);
       }
 
@@ -114,6 +114,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
           'nid' => $record['nid'],
           'bundle' => $record['type'],
           'vid' => $record['vid'],
+          'profile' => $profile_id,
         ]);
       }
     }

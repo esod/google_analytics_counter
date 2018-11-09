@@ -438,7 +438,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       $new_step = 0;
     }
 
-    $this->state->set('google_analytics_counter.data_step_' . substr($parameters['profile_id'], 3), $new_step);
+    $this->state->set('google_analytics_counter.data_step_' . $profile_id, $new_step);
 
     return $ga_feed;
   }

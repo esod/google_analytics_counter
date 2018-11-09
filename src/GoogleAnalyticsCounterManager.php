@@ -295,6 +295,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   The returned feed after the request has been made.
    */
   public function getChunkedResults($profile_id, $index = 0) {
+    // drush_print($profile_id);
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step');

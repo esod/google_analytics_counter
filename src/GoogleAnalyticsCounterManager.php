@@ -407,13 +407,16 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // Default of 10000 to fit most systems
     // (for example those with no external cron).
     $chunk = $config->get('general_settings.chunk_to_fetch');
+    drush_print($chunk);
 
     // In case there are more than $chunk path/counts to retrieve from
     // Google Analytics, do one chunk at a time and register that in $step.
-    $step = $this->state->get('google_analytics_counter.data_step_' . $parameters['profile_id']);
+    $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
+    drush_print($step);
 
     // Which node to look for first. Must be between 1 - infinity.
     $pointer = $step * $chunk + 1;
+    drush_print($pointer);
 
     // Set the pointer.
     $pointer += $chunk;

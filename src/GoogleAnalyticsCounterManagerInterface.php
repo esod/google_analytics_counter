@@ -51,7 +51,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($profile_id, $index = 0);
+  public function getTotalResults($profile_id, $index = 0);
 
   /**
    * Request report data.

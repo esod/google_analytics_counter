@@ -284,7 +284,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
 
   /**
-   * Get the results from google in user specified amounts (chunks).
+   * Get the total results from Google.
    *
    * @param string $profile_id
    *   The profile id used in the google query.
@@ -294,7 +294,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($profile_id, $index = 0) {
+  public function getTotalResults($profile_id, $index = 0) {
 //    $profile_id = '74469432';
 //     drush_print($profile_id);
     $config = $this->config;
@@ -495,7 +495,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // Already busted drush_print($profile_id);
 //    $profile_id = '74469432';
 
-    $feed = $this->getChunkedResults($profile_id, $index);
+    $feed = $this->getTotalResults($profile_id, $index);
 
     foreach ($feed->results->rows as $value) {
       // Remove Google Analytics pagepaths that are extremely long and meaningless.

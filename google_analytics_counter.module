@@ -90,13 +90,12 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
 //    drush_print($profile_id);
 
     try {
-      // Fetch the first batch to see how many there are.
-      $results = $manager->getChunkedResults($profile_id);
+      // Fetch the total results first.
+      $results = $manager->getTotalResults($profile_id);
+      $total_results = $results->results->totalResults;
 
-      // Create queue items from the chunks.
-      $total = $results->results->totalResults;
-//      drush_print($total);
-      for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
+      // Create queue items from the total results divided into chunks.
+      for ($index = 0; $index < $total_results / $config->get('general_settings.chunk_to_fetch'); $index++) {
         // Add a queue item to fetch for all chunks.
         $queue->createItem([
           'type' => 'fetch',

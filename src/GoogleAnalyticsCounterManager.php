@@ -299,7 +299,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
      drush_print($profile_id);
     $config = $this->config;
 
-    $step = $this->state->get('google_analytics_counter.data_step');
+    $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
     $chunk = $config->get('general_settings.chunk_to_fetch');
 
     // Set the pointer.
@@ -352,7 +352,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed|object
    *   A new GoogleAnalyticsCounterFeed object
    */
-  public function reportData(array $parameters, array $cache_options) {
+  public function reportData($parameters = [], $cache_options = []) {
     $config = $this->config;
 
     $ga_feed = $this->newGaFeed();
@@ -392,7 +392,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $profile_id = substr($parameters['profile_id'], 3);
 
     // The last time the Data was refreshed by Google. Not always available from Google.
-    $this->state->set('google_analytics_counter.data_last_refreshed_' . $profile_id, $ga_feed->results->dataLastRefreshed);
+    $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
 
     // The first selfLink query to Google. Helpful for debugging from the dashboard.
     $this->state->set('google_analytics_counter.most_recent_query_' . $profile_id, $ga_feed->results->selfLink);
@@ -410,7 +410,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     // In case there are more than $chunk path/counts to retrieve from
     // Google Analytics, do one chunk at a time and register that in $step.
-    $step = $this->state->get('google_analytics_counter.data_step' . $parameters['profile_id']);
+    $step = $this->state->get('google_analytics_counter.data_step_' . $parameters['profile_id']);
 
     // Which node to look for first. Must be between 1 - infinity.
     $pointer = $step * $chunk + 1;
@@ -435,7 +435,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       $new_step = 0;
     }
 
-    $this->state->set('google_analytics_counter.data_step_' . $parameters['profile_id'], $new_step);
+    $this->state->set('google_analytics_counter.data_step_' . substr($parameters['profile_id'], 3), $new_step);
 
     return $ga_feed;
   }
@@ -479,20 +479,20 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   /**
    * Update the path counts.
    *
-   * @param int $index
-   *   The index of the chunk to fetch and update.
    * @param string $profile_id
    *   The profile id used in the google query.
+   * @param int $index
+   *   The index of the chunk to fetch and update.
    *
    * This function is triggered by hook_cron().
    *
    * @throws \Exception
    */
-  public function updatePathCounts($index = 0, $profile_id = '') {
+  public function updatePathCounts($profile_id, $index = 0) {
     // Already busted drush_print($profile_id);
 //    $profile_id = '74469432';
 
-    $feed = $this->getChunkedResults($index, $profile_id);
+    $feed = $this->getChunkedResults($profile_id, $index);
 
     foreach ($feed->results->rows as $value) {
       // Remove Google Analytics pagepaths that are extremely long and meaningless.
@@ -784,6 +784,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'google_analytics_counter.expires_at',
       'google_analytics_counter.refresh_token',
       'google_analytics_counter.total_nodes',
+      'google_analytics_counter.data_last_refreshed',
     ]);
   }
 
@@ -795,7 +796,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    */
   public function revokeProfiles($profile_id) {
     $this->state->deleteMultiple([
-      'google_analytics_counter.data_last_refreshed_' . $profile_id,
       'google_analytics_counter.data_step_' . $profile_id,
       'google_analytics_counter.most_recent_query_' . $profile_id,
       'google_analytics_counter.total_pageviews_' . $profile_id,

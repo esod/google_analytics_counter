@@ -269,7 +269,6 @@ function google_analytics_counter_update_8008() {
   foreach ($profile_ids as $profile_id) {
 
     $gac_states = [
-      'google_analytics_counter.data_last_refreshed' => 'google_analytics_counter.data_last_refreshed_' . $profile_id,
       'google_analytics_counter.data_step' => 'google_analytics_counter.data_step_' . $profile_id,
       'google_analytics_counter.most_recent_query' => 'google_analytics_counter.most_recent_query_' . $profile_id,
       'google_analytics_counter.total_pageviews' => 'google_analytics_counter.total_pageviews_' . $profile_id,
@@ -281,5 +280,8 @@ function google_analytics_counter_update_8008() {
       \Drupal::state()->set($value, $gac_data);
       \Drupal::state()->delete($key);
     }
+
+    // Now delete profile_ids
+    \Drupal::state()->delete('google_analytics_counter.profile_ids');
   }
 }

@@ -77,7 +77,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed|object
    *   A new GoogleAnalyticsCounterFeed object
    */
-  public function reportData(array $parameters, array $cache_options);
+  public function reportData($parameters = [], $cache_options = []);
 
   /**
    * Get the count of pageviews for a path.
@@ -93,16 +93,16 @@ interface GoogleAnalyticsCounterManagerInterface {
   /**
    * Update the path counts.
    *
-   * @param int $index
-   *   The index of the chunk to fetch and update.
    * @param string $profile_id
    *   The profile id used in the google query.
+   * @param int $index
+   *   The index of the chunk to fetch and update.
    *
    * This function is triggered by hook_cron().
    *
    * @throws \Exception
    */
-  public function updatePathCounts($index = 0, $profile_id = '');
+  public function updatePathCounts($profile_id, $index = 0);
 
   /**
    * Save the pageview count for a given node.

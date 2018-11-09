@@ -296,7 +296,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    */
   public function getChunkedResults($profile_id, $index = 0) {
 //    $profile_id = '74469432';
-     drush_print($profile_id);
+//     drush_print($profile_id);
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
@@ -607,7 +607,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     }
 
     // To avoid integrity constraint violations, use update or insert on the field entity.
-    // To do. Try upsert or merge for better performance.
+    // To do: Try upsert or merge for better performance.
     $query = $this->connection->select('node__field_google_analytics_counter', 'gac');
     $query->fields('gac');
     $query->condition('entity_id', $nid);
@@ -788,6 +788,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'google_analytics_counter.refresh_token',
       'google_analytics_counter.total_nodes',
       'google_analytics_counter.data_last_refreshed',
+      'google_analytics_counter.profile_ids',
     ]);
   }
 

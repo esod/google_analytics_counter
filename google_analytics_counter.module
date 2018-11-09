@@ -83,7 +83,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
 
 //  drush_print($num_rows);
 
-  foreach ($profile_ids as $profile_id) {
+  foreach ($profile_ids as $key => $profile_id) {
     // Select all the published nodes and create queue items for each $profile_id.
     $database = \Drupal::database();
     $query = $database->select('node_field_data', 'nfd');
@@ -97,7 +97,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
 
       // Create queue items from the chunks.
       $total = $results->results->totalResults;
-      drush_print($total);
+//      drush_print($total);
       for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
         // Add a queue item to fetch for all chunks.
         $queue->createItem([

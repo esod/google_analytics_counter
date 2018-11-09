@@ -321,7 +321,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'refresh' => FALSE,
     ];
 
-    drush_print_r($parameters);
+//    drush_print_r($parameters);
 
     return $this->reportData($parameters, $cache_options);
   }
@@ -331,16 +331,16 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @param array $parameters
    *   An associative array containing:
-   *   - profile_id: required [default='ga:profile_id']
+   *   - profile_id: required
+   *   - dimensions: optional [ga:pagePath]
    *   - metrics: required [ga:pageviews]
-   *   - dimensions: optional [default=none]
-   *   - sort_metric: optional [default=none]
-   *   - filters: optional [default=none]
-   *   - segment: optional [default=none]
-   *   - start_date: [default=-1 week]
+   *   - sort: optional [ga:pageviews]
+   *   - start-date: [default=-1 week]
    *   - end_date: optional [default=tomorrow]
    *   - start_index: [default=1]
    *   - max_results: optional [default=10,000].
+   *   - filters: optional [default=none]
+   *   - segment: optional [default=none]
    * @param array $cache_options
    *   An optional associative array containing:
    *   - cid: optional [default=md5 hash]
@@ -402,7 +402,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $this->state->set('google_analytics_counter.total_paths_' . $profile_id, $ga_feed->results->totalResults);
 
     // How many results to ask from Google Analytics in one request.
-    // Default of 1000 to fit most systems
+    // Default of 10000 to fit most systems
     // (for example those with no external cron).
     $chunk = $config->get('general_settings.chunk_to_fetch');
 

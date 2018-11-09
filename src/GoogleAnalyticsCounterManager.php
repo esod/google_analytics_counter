@@ -149,6 +149,19 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   }
 
   /**
+   * Begin authentication to Google authentication page with the client_id.
+   */
+  public function beginGacAuthentication() {
+    global $base_url;
+    $current_path = \Drupal::service('path.current')->getPath();
+    $uri = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
+    $redirect_uri = $base_url . $uri;
+
+    $gafeed = new GoogleAnalyticsCounterFeed();
+    $gafeed->beginAuthentication($this->config->get('general_settings.client_id'), $redirect_uri);
+  }
+
+  /**
    * Check to make sure we are authenticated with google.
    *
    * @return bool
@@ -220,7 +233,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     }
 
     return NULL;
-
   }
 
   /**
@@ -270,32 +282,21 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     return time() + $config->get('general_settings.cache_length');
   }
 
-  /**
-   * Begin authentication to Google authentication page with the client_id.
-   */
-  public function beginGacAuthentication() {
-    global $base_url;
-    $current_path = \Drupal::service('path.current')->getPath();
-    $uri = \Drupal::service('path.alias_manager')->getAliasByPath($current_path);
-    $redirect_uri = $base_url . $uri;
-
-    $gafeed = new GoogleAnalyticsCounterFeed();
-    $gafeed->beginAuthentication($this->config->get('general_settings.client_id'), $redirect_uri);
-  }
 
   /**
-   * Get the results from google.
+   * Get the results from google in user specified amounts (chunks).
    *
    * @param string $profile_id
    *   The profile id used in the google query.
    * @param int $index
-   *   The index of the chunk to fetch so that it can be queued.
+   *   The index of the chunk to fetch for the queue.
    *
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
   public function getChunkedResults($profile_id, $index = 0) {
-    // drush_print($profile_id);
+//    $profile_id = '74469432';
+     drush_print($profile_id);
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step');
@@ -471,6 +472,89 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     return number_format($sum_of_pageviews);
   }
 
+  /****************************************************************************/
+  // Query functions.
+  /****************************************************************************/
+
+  /**
+   * Update the path counts.
+   *
+   * @param int $index
+   *   The index of the chunk to fetch and update.
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   *
+   * This function is triggered by hook_cron().
+   *
+   * @throws \Exception
+   */
+  public function updatePathCounts($index = 0, $profile_id = '') {
+    // Already busted drush_print($profile_id);
+//    $profile_id = '74469432';
+
+    $feed = $this->getChunkedResults($index, $profile_id);
+
+    foreach ($feed->results->rows as $value) {
+      // Remove Google Analytics pagepaths that are extremely long and meaningless.
+      $page_path = substr(htmlspecialchars($value['pagePath'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 0, 2047);
+
+      // Update the Google Analytics Counter.
+      $this->connection->merge('google_analytics_counter')
+        ->key('pagepath_hash', md5($page_path))
+        ->fields([
+          // Escape the path see https://www.drupal.org/node/2381703
+          'pagepath' => $page_path,
+          'pageviews' => $value['pageviews'],
+        ])
+        ->execute();
+    }
+
+    // Log the results.
+    $this->logger->info($this->t('Saved @count paths from Google Analytics into the database.', ['@count' => count($feed->results->rows)]));
+  }
+
+  /**
+   * Save the pageview count for a given node.
+   *
+   * @param integer $nid
+   *   The node id.
+   * @param string $bundle
+   *   The content type of the node.
+   * @param int $vid
+   *   Revision id value.
+   *
+   * @throws \Exception
+   */
+  public function updateStorage($nid, $bundle, $vid) {
+    // Get all the aliases for a given node id.
+    $aliases = [];
+    $path = '/node/' . $nid;
+    $aliases[] = $path;
+    foreach ($this->languageManager->getLanguages() as $language) {
+      $alias = $this->aliasManager->getAliasByPath($path, $language->getId());
+      $aliases[] = $alias;
+      if (array_key_exists($language->getId(), $this->prefixes) && $this->prefixes[$language->getId()]) {
+        $aliases[] = '/' . $this->prefixes[$language->getId()] . $path;
+        $aliases[] = '/' . $this->prefixes[$language->getId()] . $alias;
+      }
+    }
+
+    // Add also all versions with a trailing slash.
+    $aliases = array_merge($aliases, array_map(function ($path) {
+      return $path . '/';
+    }, $aliases));
+
+    // It's the front page
+    // Todo: Could be brittle
+    if ($nid == substr(\Drupal::configFactory()->get('system.site')->get('page.front'), 6)) {
+      $sum_of_pageviews = $this->sumPageviews(['/']);
+      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
+    }
+    else {
+      $sum_of_pageviews = $this->sumPageviews(array_unique($aliases));
+      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
+    }
+  }
   /**
    * Look up the count via the hash of the pathes.
    *
@@ -479,7 +563,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   Count of views.
    */
   protected function sumPageviews($aliases) {
-
     // $aliases can make pageview_total greater than pageviews
     // because $aliases can include page aliases, node/id, and node/id/ URIs.
     $hashes = array_map('md5', $aliases);
@@ -491,41 +574,9 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     foreach ($path_counts as $path_count) {
       $sum_of_pageviews += $path_count->pageviews;
     }
+
     return $sum_of_pageviews;
   }
-
-  /**
-   * Programmatically revoke stored state values.
-   */
-  public function revoke() {
-    $this->state->deleteMultiple([
-      'google_analytics_counter.access_token',
-      'google_analytics_counter.cron_next_execution',
-      'google_analytics_counter.expires_at',
-      'google_analytics_counter.refresh_token',
-      'google_analytics_counter.total_nodes',
-    ]);
-  }
-
-  /**
-   * Programmatically revoke stored profile state values.
-   *
-   * @param string $profile_id
-   *   The profile id used in the google query.
-   */
-  public function revokeProfiles($profile_id) {
-    $this->state->deleteMultiple([
-      'google_analytics_counter.data_last_refreshed_' . $profile_id,
-      'google_analytics_counter.data_step_' . $profile_id,
-      'google_analytics_counter.most_recent_query_' . $profile_id,
-      'google_analytics_counter.total_pageviews_' . $profile_id,
-      'google_analytics_counter.total_paths_' . $profile_id,
-    ]);
-  }
-
-  /****************************************************************************/
-  // Query functions.
-  /****************************************************************************/
 
   /**
    * Merge the sum of pageviews into google_analytics_counter_storage.
@@ -587,8 +638,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         ->execute();
     }
   }
-
-
 
   /**
    * Get the row count of a table, sometimes with conditions.
@@ -668,83 +717,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     return $rows;
   }
 
-  /**
-   * Save the pageview count for a given node.
-   *
-   * @param integer $nid
-   *   The node id.
-   * @param string $bundle
-   *   The content type of the node.
-   * @param int $vid
-   *   Revision id value.
-   *
-   * @throws \Exception
-   */
-  public function updateStorage($nid, $bundle, $vid) {
-    // Get all the aliases for a given node id.
-    $aliases = [];
-    $path = '/node/' . $nid;
-    $aliases[] = $path;
-    foreach ($this->languageManager->getLanguages() as $language) {
-      $alias = $this->aliasManager->getAliasByPath($path, $language->getId());
-      $aliases[] = $alias;
-      if (array_key_exists($language->getId(), $this->prefixes) && $this->prefixes[$language->getId()]) {
-        $aliases[] = '/' . $this->prefixes[$language->getId()] . $path;
-        $aliases[] = '/' . $this->prefixes[$language->getId()] . $alias;
-      }
-    }
-
-    // Add also all versions with a trailing slash.
-    $aliases = array_merge($aliases, array_map(function ($path) {
-      return $path . '/';
-    }, $aliases));
-
-    // It's the front page
-    // Todo: Could be brittle
-    if ($nid == substr(\Drupal::configFactory()->get('system.site')->get('page.front'), 6)) {
-      $sum_of_pageviews = $this->sumPageviews(['/']);
-      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
-    }
-    else {
-      $sum_of_pageviews = $this->sumPageviews(array_unique($aliases));
-      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
-    }
-  }
-
-  /**
-   * Update the path counts.
-   *
-   * @param int $index
-   *   The index of the chunk to fetch and update.
-   * @param string $profile_id
-   *   The profile id used in the google query.
-   *
-   * This function is triggered by hook_cron().
-   *
-   * @throws \Exception
-   */
-  public function updatePathCounts($profile_id, $index = 0) {
-    $feed = $this->getChunkedResults($profile_id, $index);
-
-    foreach ($feed->results->rows as $value) {
-      // Remove Google Analytics pagepaths that are extremely long and meaningless.
-      $page_path = substr(htmlspecialchars($value['pagePath'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 0, 2047);
-
-      // Update the Google Analytics Counter.
-      $this->connection->merge('google_analytics_counter')
-        ->key('pagepath_hash', md5($page_path))
-        ->fields([
-          // Escape the path see https://www.drupal.org/node/2381703
-          'pagepath' => $page_path,
-          'pageviews' => $value['pageviews'],
-        ])
-        ->execute();
-      }
-
-    // Log the results.
-    $this->logger->info($this->t('Saved @count paths from Google Analytics into the database.', ['@count' => count($feed->results->rows)]));
-  }
-
   /****************************************************************************/
   // Message functions.
   /****************************************************************************/
@@ -796,6 +768,39 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         ->toString();
 
     return $project_name;
+  }
+
+  /****************************************************************************/
+  // Uninstall functions.
+  /****************************************************************************/
+
+  /**
+   * Programmatically revoke stored state values.
+   */
+  public function revoke() {
+    $this->state->deleteMultiple([
+      'google_analytics_counter.access_token',
+      'google_analytics_counter.cron_next_execution',
+      'google_analytics_counter.expires_at',
+      'google_analytics_counter.refresh_token',
+      'google_analytics_counter.total_nodes',
+    ]);
+  }
+
+  /**
+   * Programmatically revoke stored profile state values.
+   *
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   */
+  public function revokeProfiles($profile_id) {
+    $this->state->deleteMultiple([
+      'google_analytics_counter.data_last_refreshed_' . $profile_id,
+      'google_analytics_counter.data_step_' . $profile_id,
+      'google_analytics_counter.most_recent_query_' . $profile_id,
+      'google_analytics_counter.total_pageviews_' . $profile_id,
+      'google_analytics_counter.total_paths_' . $profile_id,
+    ]);
   }
 
 }

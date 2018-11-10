@@ -230,43 +230,45 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#value' => $this->t("A pagepath can include paths that don't have an NID, like /search."),
     ];
 
-    $rows = $this->manager->getTopTwentyResults('google_analytics_counter');
-    // Display table.
-    $build['drupal_info']['top_twenty_results']['counter']['table'] = [
-      '#type' => 'table',
-      '#header' => [
-        $this->t('Pagepath'),
-        $this->t('Pageviews'),
-      ],
-      '#rows' => $rows,
-    ];
+    foreach ($profile_ids as $key => $profile_id) {
+      $rows = $this->manager->getTopTwentyResults('google_analytics_counter', $profile_id);
+      // Display table.
+      $build['drupal_info']['top_twenty_results']['counter']['table'] = [
+        '#type' => 'table',
+        '#header' => [
+          $this->t('Pagepath'),
+          $this->t('Pageviews'),
+        ],
+        '#rows' => $rows,
+      ];
 
-    // Top Twenty Results for Google Analytics Counter Storage table.
-    $build['drupal_info']['top_twenty_results']['storage'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Pageview Totals'),
-      '#open' => FALSE,
-      '#attributes' => [
-        'class' => ['google-analytics-counter-storage'],
-      ],
-    ];
+      // Top Twenty Results for Google Analytics Counter Storage table.
+      $build['drupal_info']['top_twenty_results']['storage'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Pageview Totals'),
+        '#open' => FALSE,
+        '#attributes' => [
+          'class' => ['google-analytics-counter-storage'],
+        ],
+      ];
 
-    $build['drupal_info']['top_twenty_results']['storage']['summary'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('A pageview total may be greater than PAGEVIEWS because a pageview total includes page aliases, node/id, and node/id/ URIs.'),
-    ];
+      $build['drupal_info']['top_twenty_results']['storage']['summary'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('A pageview total may be greater than PAGEVIEWS because a pageview total includes page aliases, node/id, and node/id/ URIs.'),
+      ];
 
-    $rows = $this->manager->getTopTwentyResults('google_analytics_counter_storage');
-    // Display table.
-    $build['drupal_info']['top_twenty_results']['storage']['table'] = [
-      '#type' => 'table',
-      '#header' => [
-        $this->t('Nid'),
-        $this->t('Pageview Total'),
-      ],
-      '#rows' => $rows,
-    ];
+      $rows = $this->manager->getTopTwentyResults('google_analytics_counter_storage', $profile_id);
+      // Display table.
+      $build['drupal_info']['top_twenty_results']['storage']['table'] = [
+        '#type' => 'table',
+        '#header' => [
+          $this->t('Nid'),
+          $this->t('Pageview Total'),
+        ],
+        '#rows' => $rows,
+      ];
+    }
 
     $build['drupal_info']['last_cron_run'] = [
       '#type' => 'html_tag',

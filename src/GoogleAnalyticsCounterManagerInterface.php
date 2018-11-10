@@ -128,13 +128,16 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function getCount($table);
 
   /**
-   * Get the the top twenty results for pageviews and pageview_totals.
+   * The top twenty results of pageviews and pageview_totals for each profile.
    *
    * @param string $table
+   *   The table from which the results are selected.
+   * @param string $profile_id
+   *   The profile id used in the google query.
    *
    * @return mixed
    */
-  public function getTopTwentyResults($table);
+  public function getTopTwentyResults($table, $profile_id);
 
   /**
    * Prints a warning message when not authenticated.

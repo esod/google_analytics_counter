@@ -300,7 +300,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
     $chunk = $config->get('general_settings.chunk_to_fetch');
 
-    // Set the pointer.
+    // Initialize the pointer.
     $pointer = $step * $chunk + 1;
 
     $parameters = [
@@ -320,8 +320,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'expire' => self::cacheTime(),
       'refresh' => FALSE,
     ];
-
-//    drush_print_r($parameters);
 
     return $this->reportData($parameters, $cache_options);
   }
@@ -362,9 +360,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     // DEBUG:
     //// The returned object.
-    // drush_print($ga_feed);
     // Current Google Query.
-     drush_print($ga_feed->results->selfLink);
+    // drush_print($ga_feed->results->selfLink);
 
     // Handle errors here too.
     if (!empty($ga_feed->error)) {
@@ -401,24 +398,16 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // The total number of pagePaths for this profile from start_date to end_date.
     $this->state->set('google_analytics_counter.total_paths_' . $profile_id, $ga_feed->results->totalResults);
 
-    // How many results to ask from Google Analytics in one request.
-    // Default of 10000 to fit most systems
-    // (for example those with no external cron).
+    // The number of results from Google Analytics in one request.
     $chunk = $config->get('general_settings.chunk_to_fetch');
-    drush_print($chunk);
 
-    // In case there are more than $chunk path/counts to retrieve from
-    // Google Analytics, do one chunk at a time and register that in $step.
+    // Do one chunk at a time and register the data step.
     $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
-    drush_print($step);
 
-    // Which node to look for first. Must be between 1 - infinity.
     $pointer = $step * $chunk + 1;
-    drush_print($pointer);
 
-    // Set the pointer.
+    // Set the pointer equal to the pointer plus the chunk.
     $pointer += $chunk;
-    drush_print($pointer);
 
     $t_args = [
       '@size_of' => sizeof($ga_feed->results->rows),
@@ -427,9 +416,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     ];
     $this->logger->info('Retrieved @size_of items from Google Analytics data for paths @first - @second.', $t_args);
 
-    drush_print($ga_feed->results->totalResults);
-    // Increase the $step or $step = 0 depending on whether there are more total
-    // results than the amount in the current chunk.
+    // Increase the step or set the step to 0 depending on whether
+    // the pointer is less than or equal to the total results.
     if ($pointer <= $ga_feed->results->totalResults) {
       $new_step = $step + 1;
     }
@@ -491,9 +479,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @throws \Exception
    */
   public function updatePathCounts($profile_id, $index = 0) {
-    // Already busted drush_print($profile_id);
-//    $profile_id = '74469432';
-
     $feed = $this->getTotalResults($profile_id, $index);
 
     foreach ($feed->results->rows as $value) {

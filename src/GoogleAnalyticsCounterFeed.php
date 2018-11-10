@@ -579,8 +579,6 @@ class GoogleAnalyticsCounterFeed {
     $parameters['start-index'] = $params['start_index'];
     $parameters['max-results'] = $params['max_results'];
 
-    drush_print_r($parameters);
-
     $this->setQueryPath('data/ga');
     if ($this->query($this->queryPath, $parameters, 'GET', $this->generateAuthHeader(), $cache_options)) {
       $this->sanitizeReport();

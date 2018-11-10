@@ -55,9 +55,6 @@ function google_analytics_counter_cron() {
   // Store $profiles_ids here since they may have been changed.
   \Drupal::state()->set('google_analytics_counter.profile_ids', $profile_ids);
 
-  // DEBUG:
-  // drush_print_r($profile_ids);exit;
-
   // Query Google and get results for one or more profile_ids.
   _gac_cron_multiple_profile_ids($profile_ids);
 }
@@ -84,11 +81,11 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
 
   foreach ($profile_ids as $key => $profile_id) {
     try {
-      // Fetch the total results first.
+      // Fetch the total results from Google first.
       $ga_feed = $manager->getTotalResults($profile_id);
       $total_results = $ga_feed->results->totalResults;
 
-      // Create queue items from the total results divided into chunks.
+      // Create queue fetch items from the total results divided into chunks.
       for ($index = 0; $index < $total_results / $config->get('general_settings.chunk_to_fetch'); $index++) {
         // Add a queue item to fetch for all chunks.
         $queue->createItem([
@@ -98,8 +95,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
         ]);
       }
 
-      // Create queue items for all the published nodes.
-      // Select all the published nodes and create queue items for each $profile_id.
+      // Select all the published nodes and create queue count items.
       $database = \Drupal::database();
       $query = $database->select('node_field_data', 'nfd');
       $query->fields('nfd', ['nid', 'type', 'vid']);

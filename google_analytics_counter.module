@@ -68,8 +68,6 @@ function google_analytics_counter_cron() {
  *   The profile ids used for google query.
  */
 function _gac_cron_multiple_profile_ids(array $profile_ids) {
-  // DEBUG:
-//  drush_print_r($profile_ids);exit;
   $config = \Drupal::config('google_analytics_counter.settings');
 
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
@@ -84,11 +82,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
   $num_rows = $manager->getCount('node_field_data');
   \Drupal::state()->set('google_analytics_counter.total_nodes', $num_rows);
 
-//  drush_print($num_rows);
-
   foreach ($profile_ids as $key => $profile_id) {
-//    drush_print($profile_id);
-
     try {
       // Fetch the total results first.
       $results = $manager->getTotalResults($profile_id);

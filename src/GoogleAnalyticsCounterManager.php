@@ -295,8 +295,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   The returned feed after the request has been made.
    */
   public function getTotalResults($profile_id, $index = 0) {
-//    $profile_id = '74469432';
-//     drush_print($profile_id);
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
@@ -788,7 +786,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'google_analytics_counter.refresh_token',
       'google_analytics_counter.total_nodes',
       'google_analytics_counter.data_last_refreshed',
-      'google_analytics_counter.profile_ids',
     ]);
   }
 
@@ -805,6 +802,9 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'google_analytics_counter.total_pageviews_' . $profile_id,
       'google_analytics_counter.total_paths_' . $profile_id,
     ]);
+
+    // Delete profile_ids now.
+    $this->state->delete('google_analytics_counter.profile_ids');
   }
 
 }

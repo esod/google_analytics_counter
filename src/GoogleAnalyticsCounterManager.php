@@ -359,9 +359,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $ga_feed->queryReportFeed($parameters, $cache_options);
 
     // DEBUG:
-    //// The returned object.
-    // Current Google Query.
-    // drush_print($ga_feed->results->selfLink);
+     drush_print($ga_feed->results->selfLink);
 
     // Handle errors here too.
     if (!empty($ga_feed->error)) {
@@ -492,12 +490,13 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
           // Escape the path see https://www.drupal.org/node/2381703
           'pagepath' => $page_path,
           'pageviews' => $value['pageviews'],
+          'profile_id' => $profile_id,
         ])
         ->execute();
     }
 
     // Log the results.
-    $this->logger->info($this->t('Saved @count paths from Google Analytics into the database.', ['@count' => count($feed->results->rows)]));
+    $this->logger->info($this->t('Merged @count paths from Google Analytics into the database.', ['@count' => count($feed->results->rows)]));
   }
 
   /**
@@ -509,10 +508,12 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   The content type of the node.
    * @param int $vid
    *   Revision id value.
+   * @param string $profile_id
+   *   The profile id used in the google query.
    *
    * @throws \Exception
    */
-  public function updateStorage($nid, $bundle, $vid) {
+  public function updateStorage($nid, $bundle, $vid, $profile_id) {
     // Get all the aliases for a given node id.
     $aliases = [];
     $path = '/node/' . $nid;
@@ -535,15 +536,15 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // Todo: Could be brittle
     if ($nid == substr(\Drupal::configFactory()->get('system.site')->get('page.front'), 6)) {
       $sum_of_pageviews = $this->sumPageviews(['/']);
-      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
+      $this->mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
     }
     else {
       $sum_of_pageviews = $this->sumPageviews(array_unique($aliases));
-      $this->mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid);
+      $this->mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
     }
   }
   /**
-   * Look up the count via the hash of the pathes.
+   * Look up the count via the hash of the paths.
    *
    * @param $aliases
    * @return string
@@ -572,6 +573,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   Node id value.
    * @param int $sum_of_pageviews
    *   Count of page views.
+   * @param string $profile_id
+   *   The profile id used in the google query.
    * @param string $bundle
    *   The content type of the node.
    * @param int $vid
@@ -579,10 +582,13 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @throws \Exception
    */
-  protected function mergeGoogleAnalyticsCounterStorage($nid, $sum_of_pageviews, $bundle, $vid) {
+  protected function mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
     $this->connection->merge('google_analytics_counter_storage')
       ->key('nid', $nid)
-      ->fields(['pageview_total' => $sum_of_pageviews])
+      ->fields([
+        'pageview_total' => $sum_of_pageviews,
+        'profile_id' => $profile_id,
+      ])
       ->execute();
 
     // Update the Google Analytics Counter field if it exists.
@@ -679,7 +685,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $rows = [];
     switch ($table) {
       case 'google_analytics_counter':
-        $query->fields('t', ['pagepath', 'pageviews']);
+        $query->fields('t', ['pagepath', 'pageviews', 'profile_id']);
+        $query->condition('profile_id', $profile_id);
         $query->orderBy('pageviews', 'DESC');
         $result = $query->execute()->fetchAll();
         $rows = [];
@@ -687,17 +694,20 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
           $rows[] = [
             $value->pagepath,
             $value->pageviews,
+            $value->profile_id,
           ];
         }
         break;
       case 'google_analytics_counter_storage':
-        $query->fields('t', ['nid', 'pageview_total']);
+        $query->fields('t', ['nid', 'pageview_total', 'profile_id']);
+        $query->condition('profile_id', $profile_id);
         $query->orderBy('pageview_total', 'DESC');
         $result = $query->execute()->fetchAll();
         foreach ($result as $value) {
           $rows[] = [
             $value->nid,
             $value->pageview_total,
+            $value->profile_id,
           ];
         }
         break;

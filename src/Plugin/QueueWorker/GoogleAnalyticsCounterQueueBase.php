@@ -37,7 +37,7 @@ abstract class GoogleAnalyticsCounterQueueBase extends QueueWorkerBase implement
       \Drupal::service('google_analytics_counter.manager')->updatePathCounts($data['profile_id'], $data['index']);
     }
     elseif ($data['type'] == 'count') {
-      \Drupal::service('google_analytics_counter.manager')->updateStorage($data['nid'], $data['bundle'], $data['vid']);
+      \Drupal::service('google_analytics_counter.manager')->updateStorage($data['nid'], $data['bundle'], $data['vid'], $data['profile_id']);
     }
   }
 

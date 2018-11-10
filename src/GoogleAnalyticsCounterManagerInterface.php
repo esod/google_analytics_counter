@@ -41,7 +41,7 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function getWebPropertiesOptions();
 
   /**
-   * Get the results from google in user specified amounts (chunks).
+   * Get the total results from Google.
    *
    * @param string $profile_id
    *   The profile id used in the google query.
@@ -113,10 +113,12 @@ interface GoogleAnalyticsCounterManagerInterface {
    *   The content type of the node.
    * @param int $vid
    *   Revision id value.
+   * @param string $profile_id
+   *   The profile id used in the google query.
    *
    * @throws \Exception
    */
-  public function updateStorage($nid, $bundle, $vid);
+  public function updateStorage($nid, $bundle, $vid, $profile_id);
 
   /**
    * Get the row count of a table, sometimes with conditions.

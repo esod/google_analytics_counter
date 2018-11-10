@@ -85,8 +85,8 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
   foreach ($profile_ids as $key => $profile_id) {
     try {
       // Fetch the total results first.
-      $results = $manager->getTotalResults($profile_id);
-      $total_results = $results->results->totalResults;
+      $ga_feed = $manager->getTotalResults($profile_id);
+      $total_results = $ga_feed->results->totalResults;
 
       // Create queue items from the total results divided into chunks.
       for ($index = 0; $index < $total_results / $config->get('general_settings.chunk_to_fetch'); $index++) {

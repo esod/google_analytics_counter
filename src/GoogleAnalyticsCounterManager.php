@@ -418,6 +418,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     // Set the pointer.
     $pointer += $chunk;
+    drush_print($pointer);
 
     $t_args = [
       '@size_of' => sizeof($ga_feed->results->rows),
@@ -426,10 +427,10 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     ];
     $this->logger->info('Retrieved @size_of items from Google Analytics data for paths @first - @second.', $t_args);
 
-    // OK now increase or zero $step.
+    drush_print($ga_feed->results->totalResults);
+    // Increase the $step or $step = 0 depending on whether there are more total
+    // results than the amount in the current chunk.
     if ($pointer <= $ga_feed->results->totalResults) {
-      // If there are more results than what we've reached with this chunk,
-      // increase step to look further during the next run.
       $new_step = $step + 1;
     }
     else {

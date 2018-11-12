@@ -113,7 +113,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => TRUE,
     ];
 
-    $profile_ids = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
+    $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
     $t_args = $this->getStartDateEndDate();
     foreach ($profile_ids as $profile_id) {
       $t_args += ['%total_pageviews' => number_format($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))];
@@ -227,7 +227,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => FALSE,
     ];
 
-    $profile_ids  = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
+    $profile_ids  = GoogleAnalyticsCounterHelper::checkProfileIds();
     foreach ($profile_ids as $profile_id) {
       // Top Twenty Results for Google Analytics Counter table.
       $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [

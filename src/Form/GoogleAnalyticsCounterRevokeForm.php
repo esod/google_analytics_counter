@@ -106,7 +106,7 @@ class GoogleAnalyticsCounterRevokeForm extends ConfirmFormBase {
     $this->manager->revoke();
 
     // Revoke the profile id state values.
-    $profile_ids = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
+    $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
     foreach ($profile_ids as $profile_id) {
       $this->manager->revokeProfiles($profile_id);
     }

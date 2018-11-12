@@ -132,7 +132,7 @@ function google_analytics_counter_uninstall() {
   $manager->revoke();
 
   // Revoke the profile id state values.
-  $profile_ids = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
+  $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
   foreach ($profile_ids as $profile_id) {
     $manager->revokeProfiles($profile_id);
   }
@@ -141,7 +141,7 @@ function google_analytics_counter_uninstall() {
   \Drupal::state()->delete('google_analytics_counter.profile_ids');
 
   // Remove queued items from the database.
-  GoogleAnalyticsCounterHelper::gacRemoveQueuedItems();
+  GoogleAnalyticsCounterHelper::removeQueuedItems();
 
   // Uninstall the Google Analytics Counter field.
   $bundles = ['node'];
@@ -227,7 +227,7 @@ function google_analytics_counter_update_8006() {
  * Issue #3009673: Remove stale queued items from the database.
  */
 function google_analytics_counter_update_8007() {
-  GoogleAnalyticsCounterHelper::gacRemoveQueuedItems();
+  GoogleAnalyticsCounterHelper::removeQueuedItems();
 }
 
 /**

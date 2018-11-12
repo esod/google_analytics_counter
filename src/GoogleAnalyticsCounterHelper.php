@@ -14,7 +14,7 @@ class GoogleAnalyticsCounterHelper {
    *
    * @return array
    */
-  public static function gacCheckProfileIds() {
+  public static function checkProfileIds() {
     $config = \Drupal::config('google_analytics_counter.settings');
 
     // There may not yet be profile ids, depending on whether cron has been run.
@@ -37,7 +37,7 @@ class GoogleAnalyticsCounterHelper {
   /**
    * Remove queued items from the database.
    */
-  public static function gacRemoveQueuedItems() {
+  public static function removeQueuedItems() {
     $quantity = 200000;
     $queued_workers = \Drupal::database()
       ->query("SELECT COUNT(*) FROM {queue} WHERE name = 'google_analytics_counter_worker'")

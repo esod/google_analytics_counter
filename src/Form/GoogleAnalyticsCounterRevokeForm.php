@@ -6,6 +6,7 @@ use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Url;
+use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -103,6 +104,12 @@ class GoogleAnalyticsCounterRevokeForm extends ConfirmFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Revoke the state values.
     $this->manager->revoke();
+
+    // Revoke the profile id state values.
+    $profile_ids = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
+    foreach ($profile_ids as $profile_id) {
+      $this->manager->revokeProfiles($profile_id);
+    }
 
     // Set redirect.
     $form_state->setRedirectUrl($this->getCancelUrl());

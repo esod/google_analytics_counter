@@ -132,7 +132,7 @@ function google_analytics_counter_uninstall() {
   $manager->revoke();
 
   // Revoke the profile id state values.
-  $profile_ids = GoogleAnalyticsCounterHelper::checkForProfileIds();
+  $profile_ids = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
   foreach ($profile_ids as $profile_id) {
     $manager->revokeProfiles($profile_id);
   }
@@ -141,7 +141,7 @@ function google_analytics_counter_uninstall() {
   \Drupal::state()->delete('google_analytics_counter.profile_ids');
 
   // Remove queued items from the database.
-  _google_analytics_counter_remove_queued_items();
+  GoogleAnalyticsCounterHelper::gacRemoveQueuedItems();
 
   // Uninstall the Google Analytics Counter field.
   $bundles = ['node'];
@@ -166,24 +166,6 @@ function google_analytics_counter_uninstall() {
     if (!empty($field_storage)) {
       $field_storage->delete();
     }
-  }
-}
-
-/**
- * Remove queued items from the database.
- */
-function _google_analytics_counter_remove_queued_items() {
-  $quantity = 200000;
-  $queued_workers = \Drupal::database()
-    ->query("SELECT COUNT(*) FROM {queue} WHERE name = 'google_analytics_counter_worker'")
-    ->fetchField();
-  $chunks = $queued_workers / $quantity;
-
-  // Todo: get $t_arg working.
-  $t_arg = ['@quantity' => $quantity];
-  for ($x = 0; $x <= $chunks; $x++) {
-    \Drupal::database()
-      ->query("DELETE FROM {queue} WHERE name = 'google_analytics_counter_worker' LIMIT 200000");
   }
 }
 
@@ -245,7 +227,7 @@ function google_analytics_counter_update_8006() {
  * Issue #3009673: Remove stale queued items from the database.
  */
 function google_analytics_counter_update_8007() {
-  _google_analytics_counter_remove_queued_items();
+  GoogleAnalyticsCounterHelper::gacRemoveQueuedItems();
 }
 
 /**

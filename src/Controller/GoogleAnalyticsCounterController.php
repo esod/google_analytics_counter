@@ -91,10 +91,10 @@ class GoogleAnalyticsCounterController extends ControllerBase {
   public function dashboard() {
     if (!$this->manager->isAuthenticated() === TRUE) {
       $build = [];
-      $this->manager->notAuthenticatedMessage();
+      GoogleAnalyticsCounterHelper::notAuthenticatedMessage();
 
       // Add a link to the revoke form.
-      $build = $this->manager->revokeAuthenticationMessage($build);
+      $build = GoogleAnalyticsCounterHelper::revokeAuthenticationMessage($build);
 
       return $build;
     }
@@ -163,7 +163,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#value' => $this->t('%data_last_refreshed', $t_arg),
     ];
 
-    $project_name = $this->manager->googleProjectName();
+    $project_name = GoogleAnalyticsCounterHelper::googleProjectName();
     $t_args = [
       ':href' => $project_name,
       '@href' => 'Analytics API',
@@ -227,7 +227,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => FALSE,
     ];
 
-    $profile_ids  = GoogleAnalyticsCounterHelper::checkForProfileIds();
+    $profile_ids  = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
     foreach ($profile_ids as $profile_id) {
       // Top Twenty Results for Google Analytics Counter table.
       $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [
@@ -313,7 +313,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     }
 
     // Add a link to the revoke form.
-    $build = $this->manager->revokeAuthenticationMessage($build);
+    $build = GoogleAnalyticsCounterHelper::revokeAuthenticationMessage($build);
 
     return $build;
   }

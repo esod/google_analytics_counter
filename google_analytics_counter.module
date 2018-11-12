@@ -68,7 +68,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
   $config = \Drupal::config('google_analytics_counter.settings');
 
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
-  $manager = Drupal::service('google_analytics_counter.manager');
+  $manager = \Drupal::service('google_analytics_counter.manager');
   $queue = \Drupal::queue('google_analytics_counter_worker');
   if (!$manager->isAuthenticated()) {
     \Drupal::logger('google_analytics_counter')->alert('Google Analytics Counter is not authenticated.');

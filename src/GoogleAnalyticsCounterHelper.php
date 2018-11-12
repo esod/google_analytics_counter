@@ -2,6 +2,8 @@
 
 namespace Drupal\google_analytics_counter;
 
+use Drupal\Core\Url;
+
 /**
  * Provides Google Analytics Counter helper functions.
  */
@@ -12,7 +14,7 @@ class GoogleAnalyticsCounterHelper {
    *
    * @return array
    */
-  public static function checkForProfileIds() {
+  public static function gacCheckProfileIds() {
     $config = \Drupal::config('google_analytics_counter.settings');
 
     // There may not yet be profile ids, depending on whether cron has been run.
@@ -30,6 +32,83 @@ class GoogleAnalyticsCounterHelper {
       ];
     }
     return $profile_ids;
+  }
+
+  /**
+   * Remove queued items from the database.
+   */
+  public static function gacRemoveQueuedItems() {
+    $quantity = 200000;
+    $queued_workers = \Drupal::database()
+      ->query("SELECT COUNT(*) FROM {queue} WHERE name = 'google_analytics_counter_worker'")
+      ->fetchField();
+    $chunks = $queued_workers / $quantity;
+
+    // Todo: get $t_arg working.
+    $t_arg = ['@quantity' => $quantity];
+    for ($x = 0; $x <= $chunks; $x++) {
+      \Drupal::database()
+        ->query("DELETE FROM {queue} WHERE name = 'google_analytics_counter_worker' LIMIT 200000");
+    }
+  }
+
+  /****************************************************************************/
+  // Message functions.
+  /****************************************************************************/
+
+  /**
+   * Prints a warning message when not authenticated.
+   *
+   * @param $build
+   *
+   */
+  public static function notAuthenticatedMessage($build = []) {
+    $t_arg = [
+      ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
+        ->toString(),
+      '@href' => 'Authentication',
+    ];
+    \Drupal::messenger()->addWarning(t('Google Analytics have not been authenticated! Google Analytics Counter cannot fetch any new data. Please authenticate with Google from the <a href=:href>@href</a> page.', $t_arg));
+
+    // Revoke Google authentication.
+    self::revokeAuthenticationMessage($build);
+  }
+
+  /**
+   * Revoke Google Authentication Message.
+   *
+   * @param $build
+   * @return mixed
+   */
+  public static function revokeAuthenticationMessage($build) {
+    $t_args = [
+      ':href' => Url::fromRoute('google_analytics_counter.admin_auth_revoke', [], ['absolute' => TRUE])
+        ->toString(),
+      '@href' => 'revoking Google authentication',
+    ];
+    $build['drupal_info']['revoke_authentication'] = [
+      '#markup' => t("If there's a problem with OAUTH authentication, try <a href=:href>@href</a>.", $t_args),
+      '#prefix' => '<p>',
+      '#suffix' => '</p>',
+    ];
+    return $build;
+  }
+
+  /**
+   * Returns the link with the Google project name if it is available.
+   *
+   * @return string
+   *   Project name.
+   */
+  public static function googleProjectName() {
+    $config = \Drupal::config('google_analytics_counter.settings');
+    $project_name = !empty($config->get('general_settings.project_name')) ?
+      Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas?project=' . $config->get('general_settings.project_name'))
+        ->toString() :
+      Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas')
+        ->toString();
+
+    return $project_name;
   }
 
 }

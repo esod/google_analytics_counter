@@ -142,28 +142,6 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function getTopTwentyResults($table, $profile_id);
 
   /**
-   * Prints a warning message when not authenticated.
-   */
-  public function notAuthenticatedMessage();
-
-  /**
-   * Revoke Google Authentication Message.
-   *
-   * @param $build
-   *
-   * @return mixed
-   */
-  public function revokeAuthenticationMessage($build);
-
-  /**
-   * Returns the link with the Google project name if it is available.
-   *
-   * @return string
-   *   Project name.
-   */
-  public function googleProjectName();
-
-  /**
    * Programmatically revoke stored state values.
    */
   public function revoke();

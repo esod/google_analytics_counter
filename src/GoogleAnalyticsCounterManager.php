@@ -2,7 +2,6 @@
 
 namespace Drupal\google_analytics_counter;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Language\LanguageManagerInterface;
@@ -740,65 +739,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     }
 
     return $rows;
-  }
-
-  /****************************************************************************/
-  // Message functions.
-  /****************************************************************************/
-
-  /**
-   * Prints a warning message when not authenticated.
-   *
-   * @param $build
-   *
-   */
-  public function notAuthenticatedMessage($build = []) {
-    $t_arg = [
-      ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
-        ->toString(),
-      '@href' => 'Authentication',
-    ];
-    $this->messenger->addWarning($this->t('Google Analytics have not been authenticated! Google Analytics Counter cannot fetch any new data. Please authenticate with Google from the <a href=:href>@href</a> page.', $t_arg));
-
-    // Revoke Google authentication.
-    $this->revokeAuthenticationMessage($build);
-  }
-
-  /**
-   * Revoke Google Authentication Message.
-   *
-   * @param $build
-   * @return mixed
-   */
-  public function revokeAuthenticationMessage($build) {
-    $t_args = [
-      ':href' => Url::fromRoute('google_analytics_counter.admin_auth_revoke', [], ['absolute' => TRUE])
-        ->toString(),
-      '@href' => 'revoking Google authentication',
-    ];
-    $build['drupal_info']['revoke_authentication'] = [
-      '#markup' => $this->t("If there's a problem with OAUTH authentication, try <a href=:href>@href</a>.", $t_args),
-      '#prefix' => '<p>',
-      '#suffix' => '</p>',
-    ];
-    return $build;
-  }
-
-  /**
-   * Returns the link with the Google project name if it is available.
-   *
-   * @return string
-   *   Project name.
-   */
-  public function googleProjectName() {
-    $config = $this->config;
-    $project_name = !empty($config->get('general_settings.project_name')) ?
-      Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas?project=' . $config->get('general_settings.project_name'))
-        ->toString() :
-      Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas')
-        ->toString();
-
-    return $project_name;
   }
 
   /****************************************************************************/

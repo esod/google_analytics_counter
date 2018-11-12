@@ -6,6 +6,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\Core\Url;
 
 /**
  * Authorize access and request data from Google Analytics Core Reporting API.
@@ -201,6 +202,15 @@ class GoogleAnalyticsCounterFeed {
       $this->error = $this->t('Code: @code.  Error: @message.  Message: @details', $error_vars);
       \Drupal::logger('google_analytics_counter')
         ->error('Code: @code.  Error: @message.  Message: @details', $error_vars);
+      // Todo: Inject the messenger. Add this class to the container.
+      drupal_set_message($this->t('Code: @code.  Error: @message.  Message: @details', $error_vars), 'error');
+
+      $t_args = [
+        ':href' => Url::fromRoute('google_analytics_counter.admin_auth_revoke', [], ['absolute' => TRUE])
+          ->toString(),
+        '@href' => 'revoking Google authentication',
+      ];
+      drupal_set_message($this->t("If there's a problem with OAUTH authentication, try <a href=:href>@href</a>.", $t_args), 'warning');
     }
   }
 

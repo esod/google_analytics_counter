@@ -269,23 +269,22 @@ function google_analytics_counter_update_8008() {
  * Add the profile id to the storage tables.
  */
 function google_analytics_counter_update_8009() {
-  $google_analytics_counter = [
+  $database = \Drupal::database();
+  $column_schema_gac = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
     'length' => 20,
     'not null' => FALSE,
   ];
-  $schema = Database::getConnection()->schema();
-  $schema->addField('google_analytics_counter', 'profile_id', $google_analytics_counter);
+  $database->schema()->addField('google_analytics_counter', 'profile_id', $column_schema_gac);
 
-  $google_analytics_counter_storage = [
+  $column_schema_gacs = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
     'length' => 20,
     'not null' => FALSE,
   ];
-  $schema = Database::getConnection()->schema();
-  $schema->addField('google_analytics_counter_storage', 'profile_id', $google_analytics_counter_storage);
+  $database->schema()->addField('google_analytics_counter_storage', 'profile_id', $column_schema_gacs);
 
 
 }

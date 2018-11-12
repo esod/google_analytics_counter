@@ -585,38 +585,38 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    */
   protected function mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
     // Todo: This code is not working.
-//    $this->connection->merge('google_analytics_counter_storage')
-//      ->key('nid', $nid)
-//      ->fields([
-//        'pageview_total' => $sum_of_pageviews,
-//        'profile_id' => $profile_id,
-//      ])
-//      ->execute();
+    $this->connection->merge('google_analytics_counter_storage')
+      ->key('nid', $nid)
+      ->fields([
+        'pageview_total' => $sum_of_pageviews,
+        'profile_id' => $profile_id,
+      ])
+      ->execute();
 
-    $query = $this->connection->select('google_analytics_counter_storage', 'gacs');
-    $query->fields('gacs');
-    $query->condition('nid', $nid);
-    $nid = $query->execute()->fetchField();
-
-    if ($nid) {
-      $this->connection->update('google_analytics_counter_storage')
-        ->fields([
-          'nid' => $nid,
-          'pageview_total' => $sum_of_pageviews,
-          'profile_id' => $profile_id,
-        ])
-        ->condition('nid', $nid)
-        ->execute();
-    }
-    else {
-      $this->connection->insert('google_analytics_counter_storage')
-        ->fields([
-          'nid' => $nid,
-          'pageview_total' => $sum_of_pageviews,
-          'profile_id' => $profile_id,
-        ])
-        ->execute();
-    }
+//    $query = $this->connection->select('google_analytics_counter_storage', 'gacs');
+//    $query->fields('gacs');
+//    $query->condition('nid', $nid);
+//    $nid = $query->execute()->fetchField();
+//
+//    if ($nid) {
+//      $this->connection->update('google_analytics_counter_storage')
+//        ->fields([
+//          'nid' => (int) $nid,
+//          'pageview_total' => $sum_of_pageviews,
+//          'profile_id' => (string) $profile_id,
+//        ])
+//        ->condition('nid', $nid)
+//        ->execute();
+//    }
+//    else {
+//      $this->connection->insert('google_analytics_counter_storage')
+//        ->fields([
+//          'nid' => $nid,
+//          'pageview_total' => $sum_of_pageviews,
+//          'profile_id' => $profile_id,
+//        ])
+//        ->execute();
+//    }
 
     // Update the Google Analytics Counter field if it exists.
     if (!$this->connection->schema()->tableExists(static::TABLE)) {

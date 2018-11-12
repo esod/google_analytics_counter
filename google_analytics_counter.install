@@ -10,6 +10,7 @@ use Drupal\Core\Database\Database;
 use Drupal\Core\Url;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\field\Entity\FieldConfig;
+use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 
 /**
  * Implements hook_requirements().
@@ -124,8 +125,6 @@ function google_analytics_counter_schema() {
  * Implements hook_uninstall().
  */
 function google_analytics_counter_uninstall() {
-  $config = \Drupal::config('google_analytics_counter.settings');
-
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = Drupal::service('google_analytics_counter.manager');
 
@@ -133,7 +132,7 @@ function google_analytics_counter_uninstall() {
   $manager->revoke();
 
   // Revoke the profile id state values.
-  $profile_ids = \Drupal::state()->get('google_analytics_counter.profile_ids');
+  $profile_ids = GoogleAnalyticsCounterHelper::checkForProfileIds();
   foreach ($profile_ids as $profile_id) {
     $manager->revokeProfiles($profile_id);
   }
@@ -250,7 +249,7 @@ function google_analytics_counter_update_8007() {
 }
 
 /**
- * Remove states which will be replaced by states with profile_ids.
+ * Issue #3003875: Remove states which will be replaced by states with profile_ids.
  */
 function google_analytics_counter_update_8008() {
   $gac_states = [
@@ -266,25 +265,25 @@ function google_analytics_counter_update_8008() {
 }
 
 /**
- * Add the profile id to the storage tables.
+ * Issue #3003875: Add the profile id to the storage tables.
  */
 function google_analytics_counter_update_8009() {
-  $database = \Drupal::database();
-  $column_schema_gac = [
+  $schema = Database::getConnection()->schema();
+  $google_analytics_counter = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
     'length' => 20,
     'not null' => FALSE,
   ];
-  $database->schema()->addField('google_analytics_counter', 'profile_id', $column_schema_gac);
+  $schema->addField('google_analytics_counter', 'profile_id', $google_analytics_counter);
 
-  $column_schema_gacs = [
+  $google_analytics_counter_storage = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
     'length' => 20,
     'not null' => FALSE,
   ];
-  $database->schema()->addField('google_analytics_counter_storage', 'profile_id', $column_schema_gacs);
+  $schema->addField('google_analytics_counter_storage', 'profile_id', $google_analytics_counter_storage);
 
 
 }

@@ -7,6 +7,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Url;
+use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -226,24 +227,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => FALSE,
     ];
 
-    //
-    if (!empty(\Drupal::state()->get('google_analytics_counter.profile_ids'))) {
-      $profile_ids = \Drupal::state()->get('google_analytics_counter.profile_ids');
-    }
-    else {
-      // Convert profile_id to an array.
-      $profile_id = $config->get('general_settings.profile_id');
-
-      $profile_ids = [
-        $profile_id => $profile_id,
-      ];
-    }
-//    echo '<pre>';
-//    print_r($profile_ids);
-//    echo '</pre>';
-//    exit;
-
-    //    $profile_ids = !empty(\Drupal::state()->get('google_analytics_counter.profile_ids')) ? (\Drupal::state()->get('google_analytics_counter.profile_ids')) : $config->get('general_settings.profile_id');
+    $profile_ids  = GoogleAnalyticsCounterHelper::checkForProfileIds();
     foreach ($profile_ids as $profile_id) {
       // Top Twenty Results for Google Analytics Counter table.
       $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [

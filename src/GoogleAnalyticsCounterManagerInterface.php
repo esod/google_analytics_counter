@@ -88,7 +88,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return string
    *   Count of page views.
    */
-  public function displayGaCount($path);
+  public function displayGacCount($path);
 
   /**
    * Update the path counts.

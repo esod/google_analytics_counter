@@ -99,8 +99,6 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       return $build;
     }
 
-    $config = $this->config;
-
     $build = [];
     $build['intro'] = [
       '#type' => 'html_tag',
@@ -115,29 +113,31 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => TRUE,
     ];
 
+    $profile_ids = GoogleAnalyticsCounterHelper::gacCheckProfileIds();
     $t_args = $this->getStartDateEndDate();
-    $t_args += ['%total_pageviews' => number_format($this->state->get('google_analytics_counter.total_pageviews'))];
-    $build['google_info']['total_pageviews'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('%total_pageviews pageviews were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
-    ];
+    foreach ($profile_ids as $profile_id) {
+      $t_args += ['%total_pageviews' => number_format($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))];
+      $build['google_info']['total_pageviews_' . $profile_id] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('%total_pageviews pageviews were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+      ];
 
     $t_args = $this->getStartDateEndDate();
-    $t_args += [
-      '%total_paths' => number_format($this->state->get('google_analytics_counter.total_paths')),
-    ];
-    $build['google_info']['total_paths'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('%total_paths paths were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
-    ];
-
-    if (!$this->state->get('google_analytics_counter.most_recent_query')) {
-      $t_args = ['%most_recent_query' => 'No query has been run yet or Google is not running queries from your system. See the module\'s README.md or Google\'s documentation.'];
+      $t_args += ['%total_paths' => number_format($this->state->get('google_analytics_counter.total_paths_' . $profile_id))];
+      $build['google_info']['total_paths_' . $profile_id] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('%total_paths paths were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+      ];
     }
-    else {
-      $t_args = ['%most_recent_query' => $this->state->get('google_analytics_counter.most_recent_query')];
+    foreach ($profile_ids as $profile_id) {
+      if (!$this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)) {
+        $t_args = ['%most_recent_query' => "No query has been run yet or Google is not running queries from your system. See the module's README.md or Google's documentation."];
+      }
+      else {
+        $t_args = ['%most_recent_query' => $this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)];
+      }
     }
 
     // Google Query.
@@ -252,8 +252,6 @@ class GoogleAnalyticsCounterController extends ControllerBase {
         '#header' => [
           $this->t('Pagepath'),
           $this->t('Pageviews'),
-          // Todo: Use $profile->name instead of $profile->id.
-          $this->t('Google Profile ID'),
         ],
         '#rows' => $rows,
       ];
@@ -281,8 +279,6 @@ class GoogleAnalyticsCounterController extends ControllerBase {
         '#header' => [
           $this->t('Nid'),
           $this->t('Pageview Total'),
-          // Todo: Use $profile->name instead of $profile->id.
-          $this->t('Google Profile ID'),
         ],
         '#rows' => $rows,
       ];

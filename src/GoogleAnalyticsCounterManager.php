@@ -436,7 +436,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return string
    *   Count of page views.
    */
-  public function displayGaCount($path) {
+  public function displayGacCount($path) {
     // Make sure the path starts with a slash.
     $path = '/' . trim($path, ' /');
 
@@ -536,11 +536,11 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // Todo: Could be brittle
     if ($nid == substr(\Drupal::configFactory()->get('system.site')->get('page.front'), 6)) {
       $sum_of_pageviews = $this->sumPageviews(['/']);
-      $this->mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
+      $this->updateCounterStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
     }
     else {
       $sum_of_pageviews = $this->sumPageviews(array_unique($aliases));
-      $this->mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
+      $this->updateCounterStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
     }
   }
   /**
@@ -582,8 +582,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @throws \Exception
    */
-  protected function mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
-    // Todo: This code is not working.
+  protected function updateCounterStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
     $this->connection->merge('google_analytics_counter_storage')
       ->key('nid', $nid)
       ->fields([
@@ -592,30 +591,10 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       ])
       ->execute();
 
-//    $query = $this->connection->select('google_analytics_counter_storage', 'gacs');
-//    $query->fields('gacs');
-//    $query->condition('nid', $nid);
-//    $nid = $query->execute()->fetchField();
-//
-//    if ($nid) {
-//      $this->connection->update('google_analytics_counter_storage')
-//        ->fields([
-//          'nid' => (int) $nid,
-//          'pageview_total' => $sum_of_pageviews,
-//          'profile_id' => (string) $profile_id,
-//        ])
-//        ->condition('nid', $nid)
-//        ->execute();
-//    }
-//    else {
-//      $this->connection->insert('google_analytics_counter_storage')
-//        ->fields([
-//          'nid' => $nid,
-//          'pageview_total' => $sum_of_pageviews,
-//          'profile_id' => $profile_id,
-//        ])
-//        ->execute();
-//    }
+    // Remove rows for which there is no profile id.
+    $query = $this->connection->delete('google_analytics_counter_storage');
+    $query->condition('profile_id', $profile_id, '!=');
+    $query->execute();
 
     // Update the Google Analytics Counter field if it exists.
     if (!$this->connection->schema()->tableExists(static::TABLE)) {
@@ -708,7 +687,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $rows = [];
     switch ($table) {
       case 'google_analytics_counter':
-        $query->fields('t', ['pagepath', 'pageviews', 'profile_id']);
+        $query->fields('t', ['pagepath', 'pageviews']);
         $query->condition('profile_id', $profile_id);
         $query->orderBy('pageviews', 'DESC');
         $result = $query->execute()->fetchAll();
@@ -717,12 +696,11 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
           $rows[] = [
             $value->pagepath,
             $value->pageviews,
-            $value->profile_id,
           ];
         }
         break;
       case 'google_analytics_counter_storage':
-        $query->fields('t', ['nid', 'pageview_total', 'profile_id']);
+        $query->fields('t', ['nid', 'pageview_total']);
         $query->condition('profile_id', $profile_id);
         $query->orderBy('pageview_total', 'DESC');
         $result = $query->execute()->fetchAll();
@@ -730,7 +708,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
           $rows[] = [
             $value->nid,
             $value->pageview_total,
-            $value->profile_id,
           ];
         }
         break;

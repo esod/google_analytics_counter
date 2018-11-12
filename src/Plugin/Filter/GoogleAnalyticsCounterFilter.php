@@ -144,7 +144,7 @@ class GoogleAnalyticsCounterFilter extends FilterBase implements ContainerFactor
       // [gac|path/to/page] displays the pages views for path/to/page.
       switch ($match) {
         case '[gac]':
-          $matchlink[] = $this->manager->displayGaCount($this->currentPath->getPath());
+          $matchlink[] = $this->manager->displayGacCount($this->currentPath->getPath());
           break;
 
         case '[gac|all]':
@@ -157,7 +157,7 @@ class GoogleAnalyticsCounterFilter extends FilterBase implements ContainerFactor
 
           // Make sure the path starts with a slash.
           $path = '/' . trim($path, ' /');
-          $matchlink[] = $this->manager->displayGaCount($this->aliasManager->getAliasByPath($path));
+          $matchlink[] = $this->manager->displayGacCount($this->aliasManager->getAliasByPath($path));
           break;
       }
     }

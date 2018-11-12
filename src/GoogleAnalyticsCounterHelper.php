@@ -24,7 +24,7 @@ class GoogleAnalyticsCounterHelper {
     }
     else {
       // Convert profile_id to an array.
-      // Todo: It's possible that profile_id configuration doesn't exist either. ;-|
+      // Todo: It's possible that general_settings.profile_id doesn't exist either. ;-|
       $profile_id = $config->get('general_settings.profile_id');
 
       $profile_ids = [

@@ -239,6 +239,8 @@ class GoogleAnalyticsCounterController extends ControllerBase {
         '#header' => [
           $this->t('Pagepath'),
           $this->t('Pageviews'),
+          // Todo: Use $profile->name instead of $profile->id.
+          $this->t('Google Profile ID'),
         ],
         '#rows' => $rows,
       ];
@@ -266,6 +268,8 @@ class GoogleAnalyticsCounterController extends ControllerBase {
         '#header' => [
           $this->t('Nid'),
           $this->t('Pageview Total'),
+          // Todo: Use $profile->name instead of $profile->id.
+          $this->t('Google Profile ID'),
         ],
         '#rows' => $rows,
       ];
@@ -295,7 +299,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       ];
     }
 
-    // Revoke Google authentication.
+    // Helpful link to permit users to revoke Google authentication.
     $build = $this->manager->revokeAuthenticationMessage($build);
 
     if ($this->manager->isAuthenticated() === TRUE) {
@@ -304,6 +308,10 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     else {
       $build = [];
       $this->manager->notAuthenticatedMessage();
+
+      // Helpful link to permit users to revoke Google authentication.
+      $build = $this->manager->revokeAuthenticationMessage($build);
+
       return $build;
     }
   }
@@ -331,7 +339,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
         '%start_date' => $config->get('general_settings.start_date') ? $this->dateFormatter
           ->format(strtotime('yesterday') - strtotime(ltrim($config->get('general_settings.start_date'), '-'), 0), 'custom', 'M j, Y') : 'N/A',
         '%end_date' => $config->get('general_settings.start_date') ? $this->dateFormatter
-          ->format(strtotime('tomorrow'), 'custom', 'M j, Y') : 'N/A',
+          ->format(strtotime('yesterday'), 'custom', 'M j, Y') : 'N/A',
       ];
 
       return $t_args;

@@ -247,12 +247,12 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       return $options = [];
     }
 
+    // Get the profiles information from Google.
     $feed = $this->newGaFeed();
-
     $web_properties = $feed->queryWebProperties()->results->items;
     $profiles = $feed->queryProfiles()->results->items;
-    $options = [];
 
+    $options = [];
     // Add optgroups for each web property.
     if (!empty($profiles)) {
       foreach ($profiles as $profile) {
@@ -480,7 +480,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $feed = $this->getTotalResults($profile_id, $index);
 
     foreach ($feed->results->rows as $value) {
-      // Remove Google Analytics pagepaths that are extremely long and meaningless.
+      // Use only the first 2047 characters of the pagepath. This is extremely long
+      // but Google does store everything and Drupal can make uris (like in views) that long.
       $page_path = substr(htmlspecialchars($value['pagePath'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), 0, 2047);
 
       // Update the Google Analytics Counter.
@@ -583,21 +584,44 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @throws \Exception
    */
   protected function mergeStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
-    $this->connection->merge('google_analytics_counter_storage')
-      ->key('nid', $nid)
-      ->fields([
-        'pageview_total' => $sum_of_pageviews,
-        'profile_id' => $profile_id,
-      ])
-      ->execute();
+    // Todo: This code is not working.
+//    $this->connection->merge('google_analytics_counter_storage')
+//      ->key('nid', $nid)
+//      ->fields([
+//        'pageview_total' => $sum_of_pageviews,
+//        'profile_id' => $profile_id,
+//      ])
+//      ->execute();
+
+    $query = $this->connection->select('google_analytics_counter_storage', 'gacs');
+    $query->fields('gacs');
+    $query->condition('nid', $nid);
+    $nid = $query->execute()->fetchField();
+
+    if ($nid) {
+      $this->connection->update('google_analytics_counter_storage')
+        ->fields([
+          'nid' => $nid,
+          'pageview_total' => $sum_of_pageviews,
+          'profile_id' => $profile_id,
+        ])
+        ->condition('nid', $nid)
+        ->execute();
+    }
+    else {
+      $this->connection->insert('google_analytics_counter_storage')
+        ->fields([
+          'nid' => $nid,
+          'pageview_total' => $sum_of_pageviews,
+          'profile_id' => $profile_id,
+        ])
+        ->execute();
+    }
 
     // Update the Google Analytics Counter field if it exists.
     if (!$this->connection->schema()->tableExists(static::TABLE)) {
       return;
     }
-
-    // To avoid integrity constraint violations, use update or insert on the field entity.
-    // To do: Try upsert or merge for better performance.
     $query = $this->connection->select('node__field_google_analytics_counter', 'gac');
     $query->fields('gac');
     $query->condition('entity_id', $nid);
@@ -724,14 +748,20 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
   /**
    * Prints a warning message when not authenticated.
+   *
+   * @param $build
+   *
    */
-  public function notAuthenticatedMessage() {
+  public function notAuthenticatedMessage($build = []) {
     $t_arg = [
       ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
         ->toString(),
       '@href' => 'Authentication',
     ];
     $this->messenger->addWarning($this->t('Google Analytics have not been authenticated! Google Analytics Counter cannot fetch any new data. Please authenticate with Google from the <a href=:href>@href</a> page.', $t_arg));
+
+    // Revoke Google authentication.
+    $this->revokeAuthenticationMessage($build);
   }
 
   /**
@@ -744,10 +774,10 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $t_args = [
       ':href' => Url::fromRoute('google_analytics_counter.admin_auth_revoke', [], ['absolute' => TRUE])
         ->toString(),
-      '@href' => 'Revoke Google authentication',
+      '@href' => 'revoking Google authentication',
     ];
     $build['drupal_info']['revoke_authentication'] = [
-      '#markup' => $this->t('<a href=:href>@href</a>. Useful in some cases, if in trouble with OAuth authentication.', $t_args),
+      '#markup' => $this->t("If there's a problem with OAUTH authentication, try <a href=:href>@href</a>.", $t_args),
       '#prefix' => '<p>',
       '#suffix' => '</p>',
     ];

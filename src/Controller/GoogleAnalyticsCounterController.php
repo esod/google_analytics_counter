@@ -88,6 +88,18 @@ class GoogleAnalyticsCounterController extends ControllerBase {
    * {@inheritdoc}
    */
   public function dashboard() {
+    if (!$this->manager->isAuthenticated() === TRUE) {
+      $build = [];
+      $this->manager->notAuthenticatedMessage();
+
+      // Add a link to the revoke form.
+      $build = $this->manager->revokeAuthenticationMessage($build);
+
+      return $build;
+    }
+
+    $config = $this->config;
+
     $build = [];
     $build['intro'] = [
       '#type' => 'html_tag',
@@ -214,7 +226,14 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => FALSE,
     ];
 
-    $profile_ids = \Drupal::state()->get('google_analytics_counter.profile_ids');
+    //
+//    if (!empty(\Drupal::state()->get('google_analytics_counter.profile_ids'))) {
+//      $profile_ids = \Drupal::state()->get('google_analytics_counter.profile_ids');
+//    }
+//    else {
+//      $profile_ids[] = $config->get('general_settings.profile_id');
+//    }
+    $profile_ids = !empty(\Drupal::state()->get('google_analytics_counter.profile_ids')) ? (\Drupal::state()->get('google_analytics_counter.profile_ids')) : $config->get('general_settings.profile_id');
     foreach ($profile_ids as $profile_id) {
       // Top Twenty Results for Google Analytics Counter table.
       $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [
@@ -299,21 +318,10 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       ];
     }
 
-    // Helpful link to permit users to revoke Google authentication.
+    // Add a link to the revoke form.
     $build = $this->manager->revokeAuthenticationMessage($build);
 
-    if ($this->manager->isAuthenticated() === TRUE) {
-      return $build;
-    }
-    else {
-      $build = [];
-      $this->manager->notAuthenticatedMessage();
-
-      // Helpful link to permit users to revoke Google authentication.
-      $build = $this->manager->revokeAuthenticationMessage($build);
-
-      return $build;
-    }
+    return $build;
   }
 
   /**

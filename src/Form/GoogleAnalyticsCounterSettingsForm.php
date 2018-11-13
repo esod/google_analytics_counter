@@ -141,7 +141,8 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#max' => 10000,
       '#required' => TRUE,
       '#description' => $this->t('%queue_count items are in the queue. The number of items in the queue should be 0 after cron runs.', $t_arg) .
-        '<br /><strong>' . $this->t('Note:') .'</strong>'. $this->t(' Having 0 items in the queue confirms that pageview counts are up to date. Increase Queue Time to process all the queued items during a single cron run. Default: 120 seconds.'),
+        '<br /><strong>' . $this->t('Note:') .'</strong>'. $this->t(' Having 0 items in the queue confirms that pageview counts are up to date. Increase Queue Time to process all the queued items during a single cron run. Default: 120 seconds.') .
+        '<br />' . $this->t('Changing the Queue time will require that the cache to be cleared, which may take a minute after submission.'),
     ];
 
     // Google Analytics start date settings.
@@ -234,22 +235,26 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('google_analytics_counter.settings');
 
-    // hook_queue_info_alter() requires a cache rebuild.
-    if ($form_state->getValue('queue_time') != $config->get('general_settings.queue_time')) {
-      drupal_flush_all_caches();
-    }
+    $current_queue_time = $config->get('general_settings.queue_time');
 
+    $values = $form_state->getValues();
     $config
-      ->set('general_settings.cron_interval', $form_state->getValue('cron_interval'))
-      ->set('general_settings.chunk_to_fetch', $form_state->getValue('chunk_to_fetch'))
-      ->set('general_settings.api_dayquota', $form_state->getValue('api_dayquota'))
-      ->set('general_settings.cache_length', $form_state->getValue('cache_length') * 3600)
-      ->set('general_settings.queue_time', $form_state->getValue('queue_time'))
-      ->set('general_settings.start_date', $form_state->getValue('start_date'))
-      ->set('general_settings.advanced_date_checkbox', $form_state->getValue('advanced_date_checkbox'))
-      ->set('general_settings.fixed_start_date', $form_state->getValue('advanced_date_checkbox') == 1 ? $form_state->getValue('fixed_start_date') : '')
-      ->set('general_settings.fixed_end_date', $form_state->getValue('advanced_date_checkbox') == 1 ? $form_state->getValue('fixed_end_date') : '')
+      ->set('general_settings.cron_interval', $values['cron_interval'])
+      ->set('general_settings.chunk_to_fetch', $values['chunk_to_fetch'])
+      ->set('general_settings.api_dayquota', $values['api_dayquota'])
+      ->set('general_settings.cache_length', $values['cache_length'] * 3600)
+      ->set('general_settings.queue_time', $values['queue_time'])
+      ->set('general_settings.start_date', $values['start_date'])
+      ->set('general_settings.advanced_date_checkbox', $values['advanced_date_checkbox'])
+      ->set('general_settings.fixed_start_date', $values['advanced_date_checkbox'] == 1 ? $values['fixed_start_date'] : '')
+      ->set('general_settings.fixed_end_date', $values['advanced_date_checkbox'] == 1 ? $values['fixed_end_date'] : '')
       ->save();
+
+    // If the queue time has change the cache needs to be cleared.
+    if ($current_queue_time != $values['queue_time']) {
+      drupal_flush_all_caches();
+      \Drupal::messenger()->addMessage(t(('Caches cleared.')));
+    }
 
     parent::submitForm($form, $form_state);
   }

@@ -2,7 +2,10 @@
 
 namespace Drupal\google_analytics_counter\Form;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
@@ -19,6 +22,20 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
 
   /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * The entity type type bundle info service.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
+   */
+  protected $entityTypeBundleInfo;
+
+  /**
    * The state keyvalue collection.
    *
    * @var \Drupal\Core\State\StateInterface
@@ -33,17 +50,29 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
   protected $manager;
 
   /**
-   * Constructs a new SiteMaintenanceModeForm.
+   * Create an instance of GoogleAnalyticsCounterSettingsForm.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   Entity type manager.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entityTypeBundleInfo
+   *   The entity type bundle service.
    * @param \Drupal\Core\State\StateInterface $state
    *   The state keyvalue collection to use.
    * @param \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager
    *   Google Analytics Counter Manager object.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, StateInterface $state, GoogleAnalyticsCounterManagerInterface $manager) {
+    public function __construct(
+    ConfigFactoryInterface $config_factory,
+    EntityTypeManagerInterface $entityTypeManager,
+    EntityTypeBundleInfoInterface $entityTypeBundleInfo,
+    StateInterface $state,
+    GoogleAnalyticsCounterManagerInterface $manager
+  ) {
     parent::__construct($config_factory);
+    $this->entityTypeManager = $entityTypeManager;
+    $this->entityTypeBundleInfo = $entityTypeBundleInfo;
     $this->state = $state;
     $this->manager = $manager;
   }
@@ -54,6 +83,8 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
+      $container->get('entity_type.manager'),
+      $container->get('entity_type.bundle.info'),
       $container->get('state'),
       $container->get('google_analytics_counter.manager')
     );
@@ -218,6 +249,61 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#states' => [
         'disabled' => [
           ':input[name="advanced_date_checkbox"]' => ['checked' => FALSE],
+        ],
+      ],
+    ];
+
+    $header = [
+      'type' => $this->t('Items'),
+      'operations' => $this->t('Operations'),
+    ];
+    $form['content_types_container'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Select content types to add the google analytics counter field to:'),
+      '#open' => TRUE,
+    ];
+    $form['content_types_container']['content_types'] = [
+      '#type' => 'table',
+      '#header' => $header,
+      '#empty' => $this->t('There are no content types.'),
+    ];
+
+    // Get the content types
+    $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
+    foreach ($content_types as $machine_name => $content_type) {
+      $content_types[$content_type->id()] = $content_type->label();
+    }
+
+    $content_types_list = [
+      '#theme' => 'item_list',
+      '#items' => $content_types,
+      '#context' => ['list_style' => 'comma-list'],
+      '#empty' => $this->t('none'),
+    ];
+    $form['content_types_container']['content_types'][$content_type->id()] = [
+      'type' => [
+        '#type' => 'inline_template',
+        '#template' => '<strong>{{ label }}</strong></br><span id="selected-{{ content_type_id }}">{{ selected_bundles }}</span>',
+        '#context' => [
+          'label' => $this->t('@bundle types', ['@bundle' => $content_type->label()]),
+          'content_type_id' => $content_type->id(),
+          'selected_bundles' => $content_types_list,
+        ],
+      ],
+      'operations' => [
+        '#type' => 'operations',
+        '#links' => [
+          'select' => [
+            'title' => $this->t('Select'),
+            'url' => Url::fromRoute('google_analytics_counter.content_type_edit_form', ['content_type_id' => $content_type->id()]),
+            'attributes' => [
+              'class' => ['use-ajax'],
+              'data-dialog-type' => 'modal',
+              'data-dialog-options' => Json::encode([
+                'width' => 700,
+              ]),
+            ],
+          ],
         ],
       ],
     ];

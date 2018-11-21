@@ -459,6 +459,33 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     return number_format($sum_of_pageviews);
   }
 
+  /**
+   * Returns a formatted list of AMP-enabled content types.
+   *
+   * @return array
+   *   A list of content types that provides the following:
+   *     - Each content type enabled on the site.
+   *     - The enabled/disabled status for each content type.
+   *     - A link to enable/disable view modes for each content type.
+   *     - A link to configure the AMP view mode, if enabled.
+   */
+  public function getContentTypes() {
+    $node_types = node_type_get_names();
+    $node_status_list = [];
+    $destination = Url::fromRoute("amp.settings")->toString();
+    foreach ($node_types as $bundle => $label) {
+      $configure = Url::fromRoute("entity.entity_view_display.node.view_mode", ['node_type' => $bundle, 'view_mode_name' => 'amp'], ['query' => ['destination' => $destination]])->toString();
+      $enable_disable = Url::fromRoute("entity.entity_view_display.node.default", ['node_type' => $bundle], ['query' => ['destination' => $destination]])->toString();
+        $node_status_list[] = t('@label is <em>enabled</em>: <a href=":configure">Configure AMP view mode</a> or <a href=":enable_disable">Disable AMP display</a>', array(
+          '@label' => $label,
+          ':configure' => $configure,
+          ':enable_disable' => $enable_disable,
+        ));
+    }
+    return $node_status_list;
+  }
+
+
   /****************************************************************************/
   // Query functions.
   /****************************************************************************/

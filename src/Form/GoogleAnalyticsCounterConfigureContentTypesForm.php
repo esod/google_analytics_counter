@@ -15,6 +15,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 
 /**
  * The form for editing content types with the custom google analytics counter field.
@@ -59,13 +60,22 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   protected $messenger;
 
   /**
+   * Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface.
+   *
+   * @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface
+   */
+  protected $manager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('entity_type.manager'),
       $container->get('entity_type.bundle.info'),
-      $container->get('messenger')
+      $container->get('messenger'),
+      $container->get('google_analytics_counter.manager')
+
     );
   }
 
@@ -75,11 +85,13 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   public function __construct(
     EntityTypeManagerInterface $entity_type_manager,
     EntityTypeBundleInfoInterface $bundle_info,
-    MessengerInterface $messenger
+    MessengerInterface $messenger,
+    GoogleAnalyticsCounterManagerInterface $manager
   ) {
     $this->entityTypeManager = $entity_type_manager;
     $this->bundleInfo = $bundle_info;
     $this->messenger = $messenger;
+    $this->manager = $manager;
   }
 
   /**
@@ -92,73 +104,29 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $content_type_id = NULL) {
-    try {
-      $this->entityType = $this->entityTypeManager->getDefinition($content_type_id);
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    if (\Drupal::moduleHandler()->moduleExists('field_ui')) {
+      $form['amp_content_amp_status'] = [
+        '#title' => $this->t('AMP Status by Content Type'),
+        '#theme' => 'item_list',
+        '#items' => $this->manager->getContentTypes(),
+      ];
     }
-    catch (PluginNotFoundException $e) {
-      throw new NotFoundHttpException();
-    }
-
-    $options = $defaults = [];
-    $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
-    foreach ($content_types as $machine_name => $content_type) {
-
-//      $content_types[$content_type->id()] = $content_type->label();
-
-
-      // Check if moderation is enabled for this bundle on any workflow.
-//      $moderation_enabled = $this->moderationInformation->shouldModerateEntitiesOfBundle($this->entityType, $bundle_id);
-      // Check if moderation is enabled for this bundle on this workflow.
-
-//      $workflow_moderation_enabled = $this->workflow->getTypePlugin()->appliesToEntityTypeAndBundle($this->entityType->id(), $bundle_id);
-      // Only show bundles that are not enabled anywhere, or enabled on this
-      // workflow.
-//      if (!$moderation_enabled || $workflow_moderation_enabled) {
-        // Add the bundle to the options if it's not enabled on a workflow,
-        // unless the workflow it's enabled on is this one.
-        $options[$content_type->id()] = [
-          'title' => ['data' => ['#title' => $content_type->label()]],
-//          'type' => $bundle['label'],
-        ];
-        // Add the bundle to the list of default values if it's enabled on this
-        // workflow.
-        $defaults[$content_type->id()] = $content_type->label();
-//      }
-    }
-
-    if (!empty($options)) {
-      $bundles_header = $this->t('All @entity_type types', ['@entity_type' => $this->entityType->getLabel()]);
-      if ($bundle_entity_type_id = $this->entityType->getBundleEntityType()) {
-        $bundles_header = $this->t('All @entity_type_plural_label', ['@entity_type_plural_label' => $this->entityTypeManager->getDefinition($bundle_entity_type_id)->getPluralLabel()]);
-      }
-      $form['bundles'] = [
-        '#type' => 'tableselect',
-        '#header' => [
-          'type' => $bundles_header,
-        ],
-        '#options' => $options,
-        '#default_value' => $defaults,
-        '#attributes' => ['class' => ['no-highlight']],
+    else {
+      $form['amp_content_amp_status'] = [
+        '#type' => 'item',
+        '#title' => $this->t('AMP Status by Content Type'),
+        '#markup' => $this->t('(In order to enable and disable AMP content types in the UI, the Field UI module must be enabled.)'),
       ];
     }
 
-    // Get unsupported features for this entity type.
-//    $warnings = $this->moderationInformation->getUnsupportedFeatures($this->entityType);
-//    // Display message into the Ajax form returned.
-//    if ($this->getRequest()->get(MainContentViewSubscriber::WRAPPER_FORMAT) == 'drupal_modal' && !empty($warnings)) {
-//      $form['warnings'] = ['#type' => 'status_messages', '#weight' => -1];
-//    }
-//    // Set warning message.
-//    foreach ($warnings as $warning) {
-//      $this->messenger->addWarning($warning);
-//    }
+
 
     $form['actions'] = ['#type' => 'actions'];
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#button_type' => 'primary',
-      '#value' => $this->t('Cancel'),
+      '#value' => $this->t('Save'),
       '#ajax' => [
         'callback' => [$this, 'ajaxcallback'],
       ],
@@ -219,6 +187,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    */
   public function getTitle($content_type_id) {
     $this->entityType = $this->entityTypeManager->getDefinition($content_type_id);
+    dsm($this->entityType);
 
     $title = $this->t('Select the @entity_type types for the @workflow workflow', ['@entity_type' => $this->entityType->getLabel()]);
     if ($bundle_entity_type_id = $this->entityType->getBundleEntityType()) {

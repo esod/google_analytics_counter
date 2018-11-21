@@ -268,7 +268,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#empty' => $this->t('There are no content types.'),
     ];
 
-    // Get the content types
+    // Get the content types.
     $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
     foreach ($content_types as $machine_name => $content_type) {
       $content_types[$content_type->id()] = $content_type->label();

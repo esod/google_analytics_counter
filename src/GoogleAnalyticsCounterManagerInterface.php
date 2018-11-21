@@ -91,6 +91,18 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function displayGacCount($path);
 
   /**
+   * Returns a formatted list of AMP-enabled content types.
+   *
+   * @return array
+   *   A list of content types that provides the following:
+   *     - Each content type enabled on the site.
+   *     - The enabled/disabled status for each content type.
+   *     - A link to enable/disable view modes for each content type.
+   *     - A link to configure the AMP view mode, if enabled.
+   */
+  public function getContentTypes();
+
+  /**
    * Update the path counts.
    *
    * @param string $profile_id

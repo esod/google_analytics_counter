@@ -273,7 +273,6 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
     foreach ($content_types as $machine_name => $content_type) {
       $content_types[$content_type->id()] = $content_type->label();
     }
-
     $content_types_list = [
       '#theme' => 'item_list',
       '#items' => $content_types,

@@ -12,6 +12,7 @@ use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Form\FormBuilder;
 
 /**
  * The form for editing content types with the custom google analytics counter field.
@@ -110,25 +111,30 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
       '#weight' => -10,
     ];
 
-    // A required checkbox field.
-    $form['our_checkbox'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('I Agree: modal forms are awesome!'),
-      '#required' => TRUE,
-    ];
+    // Add a checkbox field for each content type.
+    $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
+    foreach ($content_types as $machine_name => $content_type) {
+      $form["gac_content_type_$machine_name"] = [
+        '#type' => 'checkbox',
+        '#title' => $content_type->label(),
+      ];
+    }
 
     $form['actions'] = ['#type' => 'actions'];
-    $form['actions']['send'] = [
+    $form['actions']['submit'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Submit modal form'),
-      '#attributes' => [
-        'class' => [
-          'use-ajax',
-        ],
-      ],
+      '#button_type' => 'primary',
+      '#value' => $this->t('Save'),
       '#ajax' => [
-        'callback' => [$this, 'submitModalFormAjax'],
+        'callback' => [$this, 'gacModalFormAjax'],
         'event' => 'click',
+      ],
+    ];
+    $form['actions']['cancel'] = [
+      '#type' => 'button',
+      '#value' => $this->t('Cancel'),
+      '#ajax' => [
+        'callback' => [$this, 'gacModalFormAjax'],
       ],
     ];
 
@@ -140,7 +146,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   /**
    * AJAX callback handler that displays any errors or a success message.
    */
-  public function submitModalFormAjax(array $form, FormStateInterface $form_state) {
+  public function gacModalFormAjax(array $form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
 
     // If there are any form errors, re-display the form.
@@ -175,6 +181,13 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    */
   protected function getEditableConfigNames() {
     return ['config.gac_modal_form'];
+  }
+
+  /**
+   * Route title callback.
+   */
+  public function getTitle() {
+    return $this->t('Select the content types to add the custom field to.');
   }
 
 }

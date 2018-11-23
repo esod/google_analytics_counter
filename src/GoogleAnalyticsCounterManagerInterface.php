@@ -100,7 +100,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    *     - A link to enable/disable view modes for each content type.
    *     - A link to configure the AMP view mode, if enabled.
    */
-  public function getContentTypes();
+  public function getGacContentTypes();
 
   /**
    * Update the path counts.

@@ -469,7 +469,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *     - A link to enable/disable view modes for each content type.
    *     - A link to configure the AMP view mode, if enabled.
    */
-  public function getContentTypes() {
+  public function getGacContentTypes() {
     $node_types = node_type_get_names();
     $node_status_list = [];
     $destination = Url::fromRoute("amp.settings")->toString();

@@ -2,20 +2,16 @@
 
 namespace Drupal\google_analytics_counter\Form;
 
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
-use Drupal\content_moderation\ModerationInformationInterface;
 use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\CloseDialogCommand;
-use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\EventSubscriber\MainContentViewSubscriber;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Drupal\Core\Ajax\OpenModalDialogCommand;
+use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The form for editing content types with the custom google analytics counter field.
@@ -104,97 +100,81 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
-    if (\Drupal::moduleHandler()->moduleExists('field_ui')) {
-      $form['amp_content_amp_status'] = [
-        '#title' => $this->t('AMP Status by Content Type'),
-        '#theme' => 'item_list',
-        '#items' => $this->manager->getContentTypes(),
-      ];
-    }
-    else {
-      $form['amp_content_amp_status'] = [
-        '#type' => 'item',
-        '#title' => $this->t('AMP Status by Content Type'),
-        '#markup' => $this->t('(In order to enable and disable AMP content types in the UI, the Field UI module must be enabled.)'),
-      ];
-    }
+  public function buildForm(array $form, FormStateInterface $form_state, $options = NULL) {
+    $form['#prefix'] = '<div id="gac_modal_form">';
+    $form['#suffix'] = '</div>';
 
+    // The status messages that will contain any form errors.
+    $form['status_messages'] = [
+      '#type' => 'status_messages',
+      '#weight' => -10,
+    ];
 
+    // A required checkbox field.
+    $form['our_checkbox'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('I Agree: modal forms are awesome!'),
+      '#required' => TRUE,
+    ];
 
     $form['actions'] = ['#type' => 'actions'];
-    $form['actions']['submit'] = [
+    $form['actions']['send'] = [
       '#type' => 'submit',
-      '#button_type' => 'primary',
-      '#value' => $this->t('Save'),
-      '#ajax' => [
-        'callback' => [$this, 'ajaxcallback'],
+      '#value' => $this->t('Submit modal form'),
+      '#attributes' => [
+        'class' => [
+          'use-ajax',
+        ],
       ],
-    ];
-    $form['actions']['cancel'] = [
-      '#type' => 'button',
-      '#value' => $this->t('Cancel'),
       '#ajax' => [
-        'callback' => [$this, 'ajaxcallback'],
+        'callback' => [$this, 'submitModalFormAjax'],
+        'event' => 'click',
       ],
     ];
 
+    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+
     return $form;
+  }
+
+  /**
+   * AJAX callback handler that displays any errors or a success message.
+   */
+  public function submitModalFormAjax(array $form, FormStateInterface $form_state) {
+    $response = new AjaxResponse();
+
+    // If there are any form errors, re-display the form.
+    if ($form_state->hasAnyErrors()) {
+      $response->addCommand(new ReplaceCommand('#gac_modal_form', $form));
+    }
+    else {
+      $response->addCommand(new OpenModalDialogCommand("Success!", 'The modal form has been submitted.', ['width' => 800]));
+    }
+
+    return $response;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    foreach ($form_state->getValue('bundles') as $bundle_id => $checked) {
-      if ($checked) {
-        $this->workflow->getTypePlugin()->addEntityTypeAndBundle($this->entityType->id(), $bundle_id);
-      }
-      else {
-        $this->workflow->getTypePlugin()->removeEntityTypeAndBundle($this->entityType->id(), $bundle_id);
-      }
-    }
-    $this->workflow->save();
   }
 
   /**
-   * Ajax callback to close the modal and update the selected text.
+   * Gets the configuration names that will be editable.
    *
-   * @return \Drupal\Core\Ajax\AjaxResponse
-   *   An ajax response object.
+   * @return array
+   *   An array of configuration object names that are editable if called in
+   *   conjunction with the trait's config() method.
    */
-  public function ajaxCallback() {
-    $selected_bundles = [];
-    foreach ($this->bundleInfo->getBundleInfo($this->entityType->id()) as $bundle_id => $bundle) {
-      if ($this->workflow->getTypePlugin()->appliesToEntityTypeAndBundle($this->entityType->id(), $bundle_id)) {
-        $selected_bundles[$bundle_id] = $bundle['label'];
-      }
-    }
-    $selected_bundles_list = [
-      '#theme' => 'item_list',
-      '#items' => $selected_bundles,
-      '#context' => ['list_style' => 'comma-list'],
-      '#empty' => $this->t('none'),
-    ];
-    $response = new AjaxResponse();
-    $response->addCommand(new CloseDialogCommand());
-    $response->addCommand(new HtmlCommand('#selected-' . $this->entityType->id(), $selected_bundles_list));
-    return $response;
-  }
-
-  /**
-   * Route title callback.
-   */
-  public function getTitle($content_type_id) {
-    $this->entityType = $this->entityTypeManager->getDefinition($content_type_id);
-    dsm($this->entityType);
-
-    $title = $this->t('Select the @entity_type types for the @workflow workflow', ['@entity_type' => $this->entityType->getLabel()]);
-    if ($bundle_entity_type_id = $this->entityType->getBundleEntityType()) {
-      $title = $this->t('Select the @entity_type_plural_label for the @workflow workflow', ['@entity_type_plural_label' => $this->entityTypeManager->getDefinition($bundle_entity_type_id)->getPluralLabel()]);
-    }
-
-    return $title;
+  protected function getEditableConfigNames() {
+    return ['config.gac_modal_form'];
   }
 
 }

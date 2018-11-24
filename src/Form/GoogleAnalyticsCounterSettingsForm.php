@@ -143,7 +143,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
       '#description' => $this->t('%queue_count items are in the queue. The number of items in the queue should be 0 after cron runs.', $t_arg) .
         '<br /><strong>' . $this->t('Note:') .'</strong>'. $this->t(' Having 0 items in the queue confirms that pageview counts are up to date. Increase Queue Time to process all the queued items during a single cron run. Default: 120 seconds.') .
-        '<br />' . $this->t('Changing the Queue time will require that the cache to be cleared, which may take a minute after submission.'),
+        '<br />' . $this->t('Changing the Queue Time will require that the cache to be cleared, which may take a minute after submission.'),
     ];
 
     // Google Analytics start date settings.
@@ -229,7 +229,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
     ];
     $form['content_types_container'] = [
       '#type' => 'details',
-      '#title' => $this->t('Select content types to add the google analytics counter field to:'),
+      '#title' => $this->t('Select content types to add the custom google analytics counter field to:'),
       '#open' => TRUE,
     ];
     $form['content_types_container']['content_types'] = [

@@ -172,7 +172,15 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
     }
     else {
       $response->addCommand(new CloseDialogCommand());
-      $response->addCommand(new OpenModalDialogCommand("The content types you selected now have the custom google analytics counter field:", 'Please go to the Manage form display and the Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
+
+      // Check if field storage exists.
+      $config = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
+      if (!isset($config)) {
+        $response->addCommand(new OpenModalDialogCommand('The custom google analytics counter field has been removed:', 'No content types have the custom google analytics counter field.', ['width' => 800]));
+      }
+      else {
+        $response->addCommand(new OpenModalDialogCommand('The checked content types have the custom google analytics counter field:', 'Please go to the Manage form display and the Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
+      }
     }
     return $response;
   }

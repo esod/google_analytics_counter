@@ -13,7 +13,7 @@ use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\node\NodeTypeInterface;
 
-
+use Drupal\Core\Config\FileStorage;
 
 /**
  * Provides Google Analytics Counter helper functions.
@@ -122,8 +122,38 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
     return $project_name;
   }
 
+  /**
+   * Adds the checked the fields.
+   *
+   * @param \Drupal\node\NodeTypeInterface $type
+   *   A node type entity.
+   * @param string $label
+   *   The formatter label display setting.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|\Drupal\field\Entity\FieldConfig|null
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
   public static function gacAddField(NodeTypeInterface $type, $label = 'Google Analytics Counter') {
-    // Add or remove the body field, as needed.
+
+    // Check if field storage exists.
+    $config = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
+    if (isset($config)) {
+      return NULL;
+    }
+
+    // Obtain configuration from yaml files
+    $config_path = 'modules/contrib/google_analytics_counter/config/optional';
+    $source      = new FileStorage($config_path);
+
+    // Obtain the storage manager for field storage bases.
+    // Create the new field configuration from the yaml configuration and save.
+    \Drupal::entityTypeManager()->getStorage('field_storage_config')
+      ->create($source->read('field.storage.node.field_google_analytics_counter'))
+      ->save();
+
+    // Add the checked fields.
     $field_storage = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
     $field = FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter');
     if (empty($field)) {
@@ -173,15 +203,23 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
   }
 
   /**
-   * @param \Drupal\node\NodeTypeInterface $type
+   * Deletes the unchecked field configurations.
    *
+   * @param \Drupal\node\NodeTypeInterface $type
+   *   A node type entity.
+   *
+   * @return null|void
    * @throws \Drupal\Core\Entity\EntityStorageException
+   *
+   * @see GoogleAnalyticsCounterConfigureContentTypesForm
    */
   public static function gacDeleteField(NodeTypeInterface $type) {
-    return FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter')->delete();
-    // Delete the field config.
-
-
+    // Check if field storage exists.
+    $config = FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter');
+    if (!isset($config)) {
+      return NULL;
+    }
+    FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter')->delete();
   }
 
 }

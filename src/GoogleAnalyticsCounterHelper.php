@@ -2,18 +2,12 @@
 
 namespace Drupal\google_analytics_counter;
 
-use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Field\BaseFieldDefinition;
-use Drupal\Core\Url;
-
+use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Entity\EditorialContentEntityBase;
-
-
+use Drupal\Core\Url;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\node\NodeTypeInterface;
-
-use Drupal\Core\Config\FileStorage;
 
 /**
  * Provides Google Analytics Counter helper functions.

@@ -3,24 +3,16 @@
 namespace Drupal\google_analytics_counter\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Ajax\CloseDialogCommand;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Form\FormBuilder;
-
-use Drupal\Core\Ajax\CloseDialogCommand;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\node\NodeTypeInterface;
-
-
 
 /**
  * The form for editing content types with the custom google analytics counter field.
@@ -28,34 +20,6 @@ use Drupal\node\NodeTypeInterface;
  * @internal
  */
 class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
-
-  /**
-   * The entity type manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * The entity type bundle information service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
-   */
-  protected $bundleInfo;
-
-  /**
-   * The moderation information service.
-   *
-   * @var \Drupal\content_moderation\ModerationInformationInterface
-   */
-  protected $moderationInformation;
-
-  /**
-   * The entity type definition object.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeInterface
-   */
-  protected $entityType;
 
   /**
    * The Messenger service.
@@ -76,11 +40,8 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager'),
-      $container->get('entity_type.bundle.info'),
       $container->get('messenger'),
       $container->get('google_analytics_counter.manager')
-
     );
   }
 
@@ -88,13 +49,9 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    * {@inheritdoc}
    */
   public function __construct(
-    EntityTypeManagerInterface $entity_type_manager,
-    EntityTypeBundleInfoInterface $bundle_info,
     MessengerInterface $messenger,
     GoogleAnalyticsCounterManagerInterface $manager
   ) {
-    $this->entityTypeManager = $entity_type_manager;
-    $this->bundleInfo = $bundle_info;
     $this->messenger = $messenger;
     $this->manager = $manager;
   }

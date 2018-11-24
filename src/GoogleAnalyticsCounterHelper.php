@@ -9,6 +9,12 @@ use Drupal\Core\Url;
 use Drupal\Core\Entity\EditorialContentEntityBase;
 
 
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\node\NodeTypeInterface;
+
+
+
 /**
  * Provides Google Analytics Counter helper functions.
  */
@@ -116,33 +122,66 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
     return $project_name;
   }
 
+  public static function gacAddField(NodeTypeInterface $type, $label = 'Google Analytics Counter') {
+    // Add or remove the body field, as needed.
+    $field_storage = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
+    $field = FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter');
+    if (empty($field)) {
+      $field = FieldConfig::create([
+        'field_storage' => $field_storage,
+        'bundle' => $type->id(),
+        'label' => $label,
+        'description' => t('This field stores Google Analytics pageviews.'),
+        'field_name' => 'field_google_analytics_counter',
+        'entity_type' => 'node',
+        'settings' => array('display_summary' => TRUE),
+      ]);
+      $field->save();
 
+      // Assign widget settings for the 'default' form mode.
+      entity_get_form_display('node', $type->id(), 'default')
+        ->setComponent('google_analytics_counter', array(
+          'type' => 'textfield',
+          '#maxlength' => 255,
+          '#default_value' => 0,
+          '#description' => t('blah, blah, blah'),
+        ))
+        ->save();
 
-  /**
-   * {@inheritdoc}
-   */
-  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
-    $fields = parent::baseFieldDefinitions($entity_type);
+      // Assign display settings for the 'default' and 'teaser' view modes.
+      entity_get_display('node', $type->id(), 'default')
+        ->setComponent('google_analytics_counter', array(
+          'label' => 'hidden',
+          'type' => 'textfield',
+        ))
+        ->save();
 
-    $fields['google_analytics_counter'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Title'))
-      ->setRequired(TRUE)
-      ->setTranslatable(TRUE)
-      ->setRevisionable(TRUE)
-      ->setSetting('max_length', 255)
-      ->setDisplayOptions('view', [
-        'label' => 'hidden',
-        'type' => 'string',
-        'weight' => -5,
-      ])
-      ->setDisplayOptions('form', [
-        'type' => 'string_textfield',
-        'weight' => -5,
-      ])
-      ->setDisplayConfigurable('form', TRUE);
+      // The teaser view mode is created by the Standard profile and therefore
+      // might not exist.
+      $view_modes = \Drupal::entityManager()->getViewModes('node');
+      if (isset($view_modes['teaser'])) {
+        entity_get_display('node', $type->id(), 'teaser')
+          ->setComponent('google_analytics_counter', array(
+            'label' => 'hidden',
+            'type' => 'textfield',
+          ))
+          ->save();
+      }
+    }
 
-    return $fields;
+    return $field;
   }
 
+  /**
+   * @param \Drupal\node\NodeTypeInterface $type
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public static function gacDeleteField(NodeTypeInterface $type) {
+    return FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter')->delete();
+    // Delete the field config.
+
+
+  }
 
 }

@@ -14,6 +14,9 @@ use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormBuilder;
 
+use Drupal\Core\Ajax\CloseDialogCommand;
+
+
 /**
  * The form for editing content types with the custom google analytics counter field.
  *
@@ -125,6 +128,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
       $form["gac_type_$machine_name"] = [
         '#type' => 'checkbox',
         '#title' => $content_type->label(),
+        '#default_value' => $config->get("general_settings.gac_type_$machine_name"),
       ];
     }
 
@@ -162,7 +166,11 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
       $response->addCommand(new ReplaceCommand('#gac_modal_form', $form));
     }
     else {
-      $response->addCommand(new OpenModalDialogCommand("Success!", 'The modal form has been submitted.', ['width' => 800]));
+      $response->addCommand(new CloseDialogCommand());
+      $values = $form_state->cleanValues()->getValues();
+      foreach ($values as $key => $value) {
+        $response->addCommand(new OpenModalDialogCommand("The following content types now have the custom google analytics counter field:", 'Please go to Manage form display and Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
+      }
     }
 
     return $response;

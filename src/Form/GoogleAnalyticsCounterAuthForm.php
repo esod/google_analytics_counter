@@ -224,7 +224,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
   }
 
   /**
-   * Steps through the OAuth process, revokes tokens and saves profiles.
+   * Authenticates tokens and saves configuration.
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('google_analytics_counter.settings');
@@ -232,12 +232,6 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
     switch ($form_state->getValue('op')) {
       case (string) $this->t('Authenticate'):
         $this->manager->beginGacAuthentication();
-        if (!empty($config->get('general_settings.profile_id_prefill'))) {
-          \Drupal::configFactory()
-            ->getEditable('google_analytics_counter.settings')
-            ->set('general_settings.profile_id', $config->get('general_settings.profile_id_prefill'))
-            ->save();
-        }
         break;
 
       case (string) $this->t('Revoke authentication'):

@@ -6,7 +6,7 @@ google_analytics_counter.admin_settings_form:
   requirements:
     _permission: 'administer google analytics counter'
 
-google_analytics_counter.content_type_edit_form:
+google_analytics_counter.type_edit_form:
   #  path: '/admin/config/system/google-analytics-counter/{workflow}/type/{entity_type_id}'
   path: '/admin/config/system/google-analytics-counter-types'
   defaults:

@@ -95,13 +95,21 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'google_analytics_counter_content_type_edit_form';
+    return 'google_analytics_counter_type_edit_form';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEditableConfigNames() {
+    return ['google_analytics_counter.settings'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $options = NULL) {
+    $config = $this->config('google_analytics_counter.settings');
     $form['#prefix'] = '<div id="gac_modal_form">';
     $form['#suffix'] = '</div>';
 
@@ -114,7 +122,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
     // Add a checkbox field for each content type.
     $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
     foreach ($content_types as $machine_name => $content_type) {
-      $form["gac_content_type_$machine_name"] = [
+      $form["gac_type_$machine_name"] = [
         '#type' => 'checkbox',
         '#title' => $content_type->label(),
       ];
@@ -170,17 +178,13 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-  }
-
-  /**
-   * Gets the configuration names that will be editable.
-   *
-   * @return array
-   *   An array of configuration object names that are editable if called in
-   *   conjunction with the trait's config() method.
-   */
-  protected function getEditableConfigNames() {
-    return ['config.gac_modal_form'];
+    $values = $form_state->cleanValues()->getValues();
+    $config_factory = \Drupal::configFactory();
+    foreach ($values as $key => $value) {
+    $config_factory->getEditable('google_analytics_counter.settings')
+      ->set("general_settings.$key", $value)
+      ->save();
+    }
   }
 
   /**

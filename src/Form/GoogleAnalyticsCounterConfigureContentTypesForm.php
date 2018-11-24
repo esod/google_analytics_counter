@@ -9,6 +9,7 @@ use Drupal\Core\Ajax\CloseDialogCommand;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
@@ -100,7 +101,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
       '#button_type' => 'primary',
       '#value' => $this->t('Save'),
       '#ajax' => [
-        'callback' => [$this, 'gacModalFormAjax'],
+        'callback' => [$this, 'gacModalFormSaveAjax'],
         'event' => 'click',
       ],
     ];
@@ -108,7 +109,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
       '#type' => 'button',
       '#value' => $this->t('Cancel'),
       '#ajax' => [
-        'callback' => [$this, 'gacModalFormAjax'],
+        'callback' => [$this, 'gacModalFormCancelAjax'],
       ],
     ];
 
@@ -120,7 +121,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   /**
    * AJAX callback handler that displays any errors or a success message.
    */
-  public function gacModalFormAjax(array $form, FormStateInterface $form_state) {
+  public function gacModalFormSaveAjax(array $form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
 
     // If there are any form errors, re-display the form.
@@ -143,6 +144,23 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
   }
 
   /**
+   * AJAX callback handler that for the cancel button.
+   */
+  public function gacModalFormCancelAjax(array $form, FormStateInterface $form_state) {
+    $response = new AjaxResponse();
+
+    // If there are any form errors, re-display the form.
+    if ($form_state->hasAnyErrors()) {
+      $response->addCommand(new ReplaceCommand('#gac_modal_form', $form));
+    }
+    else {
+      $response->addCommand(new CloseDialogCommand());
+    }
+
+    return $response;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
@@ -155,13 +173,20 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
     $values = $form_state->cleanValues()->getValues();
     $config_factory = \Drupal::configFactory();
     foreach ($values as $key => $value) {
-      $config_factory->getEditable('google_analytics_counter.settings')
-        ->set("general_settings.$key", $value)
-        ->save();
-    }
+      $field = FieldConfig::loadByName('node', substr($key, 9), 'field_google_analytics_counter');
 
-    // Add the field if it has been checked.
-    foreach ($values as $key => $value) {
+      if (!empty($field)) {
+      $config_factory->getEditable('google_analytics_counter.settings')
+        ->set("general_settings.$key", 1)
+        ->save();
+      }
+      else {
+        $config_factory->getEditable('google_analytics_counter.settings')
+          ->set("general_settings.$key", $value)
+          ->save();
+      }
+
+      // Add the field if it has been checked.
       $type = \Drupal::service('entity.manager')->getStorage('node_type')->load(substr($key, 9));
       if ($value == 1) {
         GoogleAnalyticsCounterHelper::gacAddField($type);

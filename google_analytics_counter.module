@@ -158,7 +158,6 @@ function google_analytics_counter_form_node_form_alter(&$form, FormStateInterfac
   // Alter the field state.
   isset($form['field_google_analytics_counter']) ? $form['field_google_analytics_counter']['widget'][0]['value']['#attributes']['readonly'] = 'readonly' : NULL;
 
-
   // Display Google Analytics Counter field only to roles with the permission.
   $fields_requiring_permission = [
     'field_google_analytics_counter',

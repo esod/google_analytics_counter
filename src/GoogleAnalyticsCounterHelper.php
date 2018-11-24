@@ -2,12 +2,17 @@
 
 namespace Drupal\google_analytics_counter;
 
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Url;
+
+use Drupal\Core\Entity\EditorialContentEntityBase;
+
 
 /**
  * Provides Google Analytics Counter helper functions.
  */
-class GoogleAnalyticsCounterHelper {
+class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
 
   /**
    * Makes certain there is a $profile_ids array. Helpful for before cron runs.
@@ -110,5 +115,34 @@ class GoogleAnalyticsCounterHelper {
 
     return $project_name;
   }
+
+
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
+    $fields = parent::baseFieldDefinitions($entity_type);
+
+    $fields['google_analytics_counter'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Title'))
+      ->setRequired(TRUE)
+      ->setTranslatable(TRUE)
+      ->setRevisionable(TRUE)
+      ->setSetting('max_length', 255)
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'string',
+        'weight' => -5,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'string_textfield',
+        'weight' => -5,
+      ])
+      ->setDisplayConfigurable('form', TRUE);
+
+    return $fields;
+  }
+
 
 }

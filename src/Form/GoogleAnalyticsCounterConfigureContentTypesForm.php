@@ -10,11 +10,16 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormBuilder;
 
 use Drupal\Core\Ajax\CloseDialogCommand;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\node\NodeTypeInterface;
+
 
 
 /**
@@ -167,12 +172,20 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
     }
     else {
       $response->addCommand(new CloseDialogCommand());
-      $values = $form_state->cleanValues()->getValues();
-      foreach ($values as $key => $value) {
-        $response->addCommand(new OpenModalDialogCommand("The following content types now have the custom google analytics counter field:", 'Please go to Manage form display and Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
-      }
-    }
 
+      // Todo: List the selected content types in the second modal.
+//      $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
+//      foreach ($content_types as $machine_name => $content_type) {
+//        $content_types[$content_type->id()] = $content_type->label();
+//      }
+//      $content_types_list = [
+//        '#theme' => 'item_list',
+//        '#items' => $content_types,
+//        '#context' => ['list_style' => 'comma-list'],
+//        '#empty' => $this->t('none'),
+//      ];
+      $response->addCommand(new OpenModalDialogCommand("The content types you selected now have the custom google analytics counter field:", 'Please go to Manage form display and Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
+    }
     return $response;
   }
 
@@ -189,17 +202,99 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
     $values = $form_state->cleanValues()->getValues();
     $config_factory = \Drupal::configFactory();
     foreach ($values as $key => $value) {
-    $config_factory->getEditable('google_analytics_counter.settings')
-      ->set("general_settings.$key", $value)
-      ->save();
+      $config_factory->getEditable('google_analytics_counter.settings')
+        ->set("general_settings.$key", $value)
+        ->save();
+    }
+
+    // Add the field if it has been checked.
+    foreach ($values as $key => $value) {
+      if ($value == 1) {
+//        $node_type = \Drupal::service('entity.manager')->getStorage('node_type')->load('webform')) {
+
+          $type = \Drupal::service('entity.manager')->getStorage('node_type')->load(substr($key, 9));
+          dsm($type);
+        $this->gacAddOrRemoveField($type);
+
+//            if ($this->doesBundleHaveField($value, 'field_google_analytics_counter')) {
+//              continue;
+            }
+
+//      foreach ($content_types as $machine_name => $content_type) {
+//          GoogleAnalyticsCounterHelper::baseFieldDefinitions($content_type);
+//        }
+//      }
     }
   }
+
+
+  /**
+   * @param string $bundle
+   * @param string $field_name
+   *
+   * @return bool
+   */
+  public function doesBundleHaveField($bundle = '', $field_name = '') {
+    $all_bundle_fields = \Drupal::service('entity_field.manager')
+      ->getFieldDefinitions('node', $bundle);
+    return isset($all_bundle_fields[$field_name]);
+  }
+
+  public function gacAddOrRemoveField(NodeTypeInterface $type, $label = 'Google Analytics Counter') {
+    // Add or remove the body field, as needed.
+    $field_storage = FieldStorageConfig::loadByName('node', 'google_analytics_counter');
+    $field = FieldConfig::loadByName('node', $type->id(), 'google_analytics_counter');
+    if (empty($field)) {
+      $field = FieldConfig::create([
+        'field_storage' => $field_storage,
+        'bundle' => $type->id(),
+        'label' => $label,
+        'field_name' => 'field_google_analytics_counter',
+        'entity_type' => 'node',
+        'settings' => array('display_summary' => TRUE),
+      ]);
+      $field->save();
+
+      // Assign widget settings for the 'default' form mode.
+      entity_get_form_display('node', $type->id(), 'default')
+        ->setComponent('google_analytics_counter', array(
+          'type' => 'textfield',
+          '#maxlength' => 255,
+          '#default_value' => 0,
+          '#description' => $this->t('blah, blah, blah'),
+        ))
+        ->save();
+
+      // Assign display settings for the 'default' and 'teaser' view modes.
+      entity_get_display('node', $type->id(), 'default')
+        ->setComponent('google_analytics_counter', array(
+          'label' => 'hidden',
+          'type' => 'textfield',
+        ))
+        ->save();
+
+      // The teaser view mode is created by the Standard profile and therefore
+      // might not exist.
+      $view_modes = \Drupal::entityManager()->getViewModes('node');
+      if (isset($view_modes['teaser'])) {
+        entity_get_display('node', $type->id(), 'teaser')
+          ->setComponent('google_analytics_counter', array(
+            'label' => 'hidden',
+            'type' => 'textfield',
+          ))
+          ->save();
+      }
+    }
+
+    return $field;
+  }
+
 
   /**
    * Route title callback.
    */
   public function getTitle() {
-    return $this->t('Select the content types to add the custom field to.');
+    return $this->t('Check only the content types you wish to add the custom field to.');
   }
 
 }

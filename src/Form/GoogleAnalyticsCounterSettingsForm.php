@@ -282,7 +282,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
     $form['content_types_container']['content_types'][$content_type->id()] = [
       'type' => [
         '#type' => 'inline_template',
-        '#template' => '<strong>{{ label }}</strong></br><span id="selected-{{ content_type_id }}">{{ selected_bundles }}</span>',
+        '#template' => '<strong>Content types</strong></br><span id="selected-content-types">{{ selected_bundles }}</span>',
         '#context' => [
           'label' => $this->t('@bundle types', ['@bundle' => $content_type->label()]),
           'content_type_id' => $content_type->id(),

@@ -4,8 +4,6 @@ namespace Drupal\google_analytics_counter\Form;
 
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
@@ -20,20 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @package Drupal\google_analytics_counter\Form
  */
 class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
-
-  /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
-   * The entity type type bundle info service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeBundleInfoInterface
-   */
-  protected $entityTypeBundleInfo;
 
   /**
    * The state keyvalue collection.
@@ -54,25 +38,13 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Entity type manager.
-   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entityTypeBundleInfo
-   *   The entity type bundle service.
    * @param \Drupal\Core\State\StateInterface $state
    *   The state keyvalue collection to use.
    * @param \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager
    *   Google Analytics Counter Manager object.
    */
-    public function __construct(
-    ConfigFactoryInterface $config_factory,
-    EntityTypeManagerInterface $entityTypeManager,
-    EntityTypeBundleInfoInterface $entityTypeBundleInfo,
-    StateInterface $state,
-    GoogleAnalyticsCounterManagerInterface $manager
-  ) {
+    public function __construct(ConfigFactoryInterface $config_factory, StateInterface $state, GoogleAnalyticsCounterManagerInterface $manager) {
     parent::__construct($config_factory);
-    $this->entityTypeManager = $entityTypeManager;
-    $this->entityTypeBundleInfo = $entityTypeBundleInfo;
     $this->state = $state;
     $this->manager = $manager;
   }
@@ -83,8 +55,6 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
-      $container->get('entity_type.manager'),
-      $container->get('entity_type.bundle.info'),
       $container->get('state'),
       $container->get('google_analytics_counter.manager')
     );
@@ -269,6 +239,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
     ];
 
     // Get the content types.
+    $content_type = [];
     $content_types = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
     foreach ($content_types as $machine_name => $content_type) {
       $content_types[$content_type->id()] = $content_type->label();

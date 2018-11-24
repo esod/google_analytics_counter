@@ -116,6 +116,10 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
     return $project_name;
   }
 
+  /****************************************************************************/
+  // Configuration functions.
+  /****************************************************************************/
+
   /**
    * Adds the checked the fields.
    *
@@ -133,19 +137,17 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
 
     // Check if field storage exists.
     $config = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
-    if (isset($config)) {
-      return NULL;
+    if (!isset($config)) {
+      // Obtain configuration from yaml files
+      $config_path = 'modules/contrib/google_analytics_counter/config/optional';
+      $source = new FileStorage($config_path);
+
+      // Obtain the storage manager for field storage bases.
+      // Create the new field configuration from the yaml configuration and save.
+      \Drupal::entityTypeManager()->getStorage('field_storage_config')
+        ->create($source->read('field.storage.node.field_google_analytics_counter'))
+        ->save();
     }
-
-    // Obtain configuration from yaml files
-    $config_path = 'modules/contrib/google_analytics_counter/config/optional';
-    $source      = new FileStorage($config_path);
-
-    // Obtain the storage manager for field storage bases.
-    // Create the new field configuration from the yaml configuration and save.
-    \Drupal::entityTypeManager()->getStorage('field_storage_config')
-      ->create($source->read('field.storage.node.field_google_analytics_counter'))
-      ->save();
 
     // Add the checked fields.
     $field_storage = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');

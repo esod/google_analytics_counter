@@ -88,6 +88,12 @@ function google_analytics_counter_schema() {
         'default' => 0,
         'not null' => TRUE,
       ),
+      'profile_id' => array(
+        'type' => 'varchar',
+        'description' => "The Google profile id.",
+        'length' => 20,
+        'not null' => FALSE,
+      ),
     ),
     'primary key' => array('pagepath_hash'),
     'indexes' => array(
@@ -110,6 +116,12 @@ function google_analytics_counter_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
+      ),
+      'profile_id' => array(
+        'type' => 'varchar',
+        'description' => "The Google profile id.",
+        'length' => 20,
+        'not null' => FALSE,
       ),
     ),
     'primary key' => array('nid'),

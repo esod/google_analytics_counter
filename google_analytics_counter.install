@@ -212,6 +212,12 @@ function google_analytics_counter_update_8005() {
  * Issue #3009673: Add the Google Analytics Counter field to existing installations.
  */
 function google_analytics_counter_update_8006() {
+  // Check if field storage exists.
+  $config = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
+  if (isset($config)) {
+    return NULL;
+  }
+
   // Obtain configuration from yaml files
   $config_path = 'modules/contrib/google_analytics_counter/config/optional';
   $source      = new FileStorage($config_path);
@@ -251,6 +257,9 @@ function google_analytics_counter_update_8008() {
  */
 function google_analytics_counter_update_8009() {
   $schema = Database::getConnection()->schema();
+  if ($schema->fieldExists('google_analytics_counter', 'profile_id')) {
+    return;
+  }
   $google_analytics_counter = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
@@ -259,6 +268,9 @@ function google_analytics_counter_update_8009() {
   ];
   $schema->addField('google_analytics_counter', 'profile_id', $google_analytics_counter);
 
+  if ($schema->fieldExists('google_analytics_counter_storage', 'profile_id')) {
+    return;
+  }
   $google_analytics_counter_storage = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
@@ -266,6 +278,4 @@ function google_analytics_counter_update_8009() {
     'not null' => FALSE,
   ];
   $schema->addField('google_analytics_counter_storage', 'profile_id', $google_analytics_counter_storage);
-
-
 }

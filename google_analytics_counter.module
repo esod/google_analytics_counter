@@ -44,14 +44,7 @@ function google_analytics_counter_cron() {
   // Convert profile_id to an array.
   $profile_id = $config->get('general_settings.profile_id');
 
-  $profile_id = [
-    $profile_id => $profile_id,
-  ];
-
-  // Combine profile_id and profile_ids.
   $profile_ids = $config->get('general_settings.profile_ids');
-  $profile_ids = $profile_id + $profile_ids;
-
   // Store $profiles_ids here since they may have been changed.
   \Drupal::state()->set('google_analytics_counter.profile_ids', $profile_ids);
 
@@ -62,7 +55,7 @@ function google_analytics_counter_cron() {
 /**
  * Gets results from google with one or more profile_ids.
  * @param array $profile_ids
- *   The profile ids used for google query.
+ *   The profile id used for google query.
  */
 function _gac_cron_multiple_profile_ids(array $profile_ids) {
   $config = \Drupal::config('google_analytics_counter.settings');
@@ -155,7 +148,7 @@ function google_analytics_counter_page_attachments(&$page) {
  * Implements hook_form_BASE_FORM_ID_alter() for node_form().
  */
 function google_analytics_counter_form_node_form_alter(&$form, FormStateInterface $form_state) {
-  // Alter the field state.
+  // Make the google analytics counter field readonly.
   isset($form['field_google_analytics_counter']) ? $form['field_google_analytics_counter']['widget'][0]['value']['#attributes']['readonly'] = 'readonly' : NULL;
 
   // Display Google Analytics Counter field only to roles with the permission.
@@ -163,6 +156,6 @@ function google_analytics_counter_form_node_form_alter(&$form, FormStateInterfac
     'field_google_analytics_counter',
   ];
   foreach ($fields_requiring_permission as $field_requiring_permission) {
-    $form[$field_requiring_permission]['#access'] = \Drupal::currentUser()->hasPermission('administer google analytics counter');
+    $form[$field_requiring_permission]['#access'] = \Drupal::currentUser()->hasPermission('access content');
   }
 }

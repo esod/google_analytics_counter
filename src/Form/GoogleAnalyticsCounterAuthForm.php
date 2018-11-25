@@ -128,7 +128,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '@href' => 'Dashboard',
     ];
     $markup_description = ($this->manager->isAuthenticated() === TRUE) ? '<p>' . $this->t('Client ID, Client Secret, and Authorized redirect URI can only be changed when not authenticated.') .
-      '<ol><li>' . $this->t('Now that you are authenticated with Google Analytics, select a') .  '<strong>' . $this->t(' Google View ') . '</strong>' . $this->t('and').  '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t(' if you wish, from the fields below.') .
+      '<ol><li>' . $this->t('Now that you are authenticated with Google Analytics, select the') .  '<strong>' . $this->t(' Google Views ') . '</strong>' . $this->t('to collect analytics from and click Save configuration.') .
       '</li><li>' . $this->t('Save configuration.') .
       '</li><li>' . $this->t('On the next cron job, analytics from the Google View field and the Additional Google Views field will be saved to Drupal.') .
       '</li><ul><li>' . $this->t('Information on the <a href=:href>@href</a> page is derived from the Google View field, not the Additional Google Views field.', $t_arg) .
@@ -139,7 +139,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '</li><li>' . $this->t('Authenticate with Google Analytics:') .
       '</li><ul><li>' .  $this->t('Follow the instructions in the README.md to set up a project in Google Analytics.') .
       '</li><li>' .  $this->t('And then click the Authenticate with Google Analytics button above.') .
-      '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select a ') . '<strong>' . $this->t('Google View') . '</strong>' . $this->t(" to collect analytics from and click Save configuration.") .
+      '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select the') . '<strong>' . $this->t(' Google Views ') . '</strong>' . $this->t('to collect analytics from and click Save configuration.') .
       '</li><ul><li>' .  $this->t("If you are not authenticated, 'Unauthenticated' is the only available option for ") .  '<strong>' . $this->t('Google View') . '</strong>.</li></ul></ol>';
 
     $form['setup'] = [
@@ -200,24 +200,15 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#weight' => 14,
     ];
 
-    $options = !empty($this->manager->getWebPropertiesOptions()) ? $this->manager->getWebPropertiesOptions() : [$config->get('general_settings.profile_id') => 'Unauthenticated'];
-    $form['profile_id'] = [
-      '#type' => 'select',
-      '#title' => $this->t("Google View"),
-      '#options' => $options,
-      '#default_value' => $config->get('general_settings.profile_id'),
-      '#description' => $this->t("Choose a Google Analytics view. If you are not authenticated, 'Unauthenticated' is the only available option."),
-      '#weight' => 15,
-    ];
-
+    $options = !empty($this->manager->getWebPropertiesOptions()) ? $this->manager->getWebPropertiesOptions() : ['unauthenticated' => 'Unauthenticated'];
     $form['profile_ids'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
-      '#title' => $this->t('Additional Google Views'),
+      '#title' => $this->t('Google Views'),
       '#options' => $options,
       '#default_value' => $config->get('general_settings.profile_ids'),
-      '#description' => $this->t("You may choose to add additional Google Analytics views. After cron runs, see the <a href=:href>@href</a>'s Top Twenty Results for each view. If you are not authenticated, 'Unauthenticated' is the only available option.", $t_args),
-      '#weight' => 16,
+      '#description' => $this->t("Select Google Analytics view here. After cron runs, see the <a href=:href>@href</a>'s Top Twenty Results for each view. If you are not authenticated, 'Unauthenticated' is the only available option.", $t_args),
+      '#weight' => 15,
     ];
 
     return parent::buildForm($form, $form_state);
@@ -245,7 +236,6 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
           ->set('general_settings.client_secret', $form_state->getValue('client_secret'))
           ->set('general_settings.redirect_uri', $form_state->getValue('redirect_uri'))
           ->set('general_settings.project_name', $form_state->getValue('project_name'))
-          ->set('general_settings.profile_id', $form_state->getValue('profile_id'))
           ->set('general_settings.profile_ids', array_combine($profile_ids, $profile_ids))
           ->save();
 

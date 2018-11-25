@@ -24,13 +24,11 @@ function google_analytics_counter_requirements($phase) {
   $requirements = [];
   // Verify that the user has authenticated with Google Analytics.
   // If not, display a warning on the status page.
-  $config = \Drupal::config('google_analytics_counter.settings');
   $t_args = [
-    '%profile_id' => $config->get('general_settings.profile_id'),
     ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
       ->toString(),
-    '@href_here' => 'authentication here',
-    '@href' => 'authenticate here',
+    '@authentication_form' => 'authentication form',
+    '@href' => 'authenticate',
   ];
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = Drupal::service('google_analytics_counter.manager');
@@ -38,7 +36,7 @@ function google_analytics_counter_requirements($phase) {
   if ($manager->isAuthenticated() === TRUE) {
     $requirements['google_analytics_counter_authentication'] = [
       'title' => t('Google Analytics Counter'),
-      'description' => t('Google Analytics profile ga:%profile_id has been authenticated. You can revoke <a href=:href>@href_here</a>.', $t_args),
+      'description' => t('Google Analytics has been authenticated. You can revoke authentication on the <a href=:href>@authentication_form</a>.', $t_args),
       'severity' => REQUIREMENT_OK,
       'value' => t('A Google Analytics profile is authenticated: OK'),
     ];
@@ -46,7 +44,7 @@ function google_analytics_counter_requirements($phase) {
   else {
     $requirements['google_analytics_counter_authentication'] = [
       'title' => t('Google Analytics Counter'),
-      'description' => t('Google Analytics Counter cannot fetch any new data. Please <a href=:href>@href</a>.', $t_args),
+      'description' => t('Google Analytics has <strong>not</strong> been authenticated. Authenticate with Google on the <a href=:href>@authentication_form</a>.', $t_args),
       'severity' => REQUIREMENT_ERROR,
       'value' => t('Google Analytics have not been authenticated!'),
     ];
@@ -290,4 +288,25 @@ function google_analytics_counter_update_8009() {
     'not null' => FALSE,
   ];
   $schema->addField('google_analytics_counter_storage', 'profile_id', $google_analytics_counter_storage);
+}
+
+/**
+ * Issue #3003875: Set profile_ids with profile_id.
+ */
+function google_analytics_counter_update_8010() {
+  $config_factory = \Drupal::configFactory();
+  $config = \Drupal::config('google_analytics_counter.settings');
+
+  // Set profile_ids with profile_id.
+  $profile_id = $config->get('general_settings.profile_id');
+  $profile_id = [$profile_id => $profile_id];
+
+  $config_factory->getEditable('google_analytics_counter.settings')
+    ->set('general_settings.profile_ids', array_combine($profile_id, $profile_id))
+    ->save();
+
+  // Clear profile_id.
+  $config_factory->getEditable('google_analytics_counter.settings')
+    ->clear('general_settings.profile_id')
+    ->save();
 }

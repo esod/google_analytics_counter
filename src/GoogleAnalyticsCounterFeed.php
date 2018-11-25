@@ -324,6 +324,8 @@ class GoogleAnalyticsCounterFeed {
 
   /**
    * Set the host property.
+   *
+   * @param $host
    */
   public function setHost($host) {
     $this->host = $host;
@@ -331,6 +333,8 @@ class GoogleAnalyticsCounterFeed {
 
   /**
    * Set the queryPath property.
+   *
+   * @param $path
    */
   protected function setQueryPath($path) {
     $this->queryPath = 'https://' . $this->host . '/' . $path;

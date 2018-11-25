@@ -619,46 +619,33 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       ->execute();
 
     // Remove rows for which there is no profile id.
-    $query = $this->connection->delete('google_analytics_counter_storage');
-    $query->condition('profile_id', $profile_id, '!=');
-    $query->execute();
+    //$query = $this->connection->delete('google_analytics_counter_storage');
+    //$query->condition('profile_id', $profile_id, '!=');
+    //$query->execute();
 
+    // This is where the module gets expensive.
     // Update the Google Analytics Counter field if it exists.
     if (!$this->connection->schema()->tableExists(static::TABLE)) {
       return;
     }
-    $query = $this->connection->select('node__field_google_analytics_counter', 'gac');
-    $query->fields('gac');
-    $query->condition('entity_id', $nid);
-    $entity_id = $query->execute()->fetchField();
 
-    if ($entity_id) {
-      $this->connection->update('node__field_google_analytics_counter')
-        ->fields([
-          'bundle' => $bundle,
-          'deleted' => 0,
-          'entity_id' => $nid,
-          'revision_id' => $vid,
-          'langcode' => 'en',
-          'delta' => 0,
-          'field_google_analytics_counter_value' => $sum_of_pageviews,
+    $this->connection->merge('node__field_google_analytics_counter')
+      ->key([
+        'entity_id', $nid,
+        'revision_id', $vid,
+        'langcode', 'en',
         ])
-        ->condition('entity_id', $entity_id)
-        ->execute();
-    }
-    else {
-      $this->connection->insert('node__field_google_analytics_counter')
-        ->fields([
-          'bundle' => $bundle,
-          'deleted' => 0,
-          'entity_id' => $nid,
-          'revision_id' => $vid,
-          'langcode' => 'en',
-          'delta' => 0,
-          'field_google_analytics_counter_value' => $sum_of_pageviews,
-        ])
-        ->execute();
-    }
+      ->key('entity_id', $nid)
+      ->fields([
+        'bundle' => $bundle,
+        'deleted' => 0,
+        'entity_id' => $nid,
+        'revision_id' => $vid,
+        'langcode' => 'en',
+        'delta' => 0,
+        'field_google_analytics_counter_value' => $sum_of_pageviews,
+      ])
+      ->execute();
   }
 
   /**

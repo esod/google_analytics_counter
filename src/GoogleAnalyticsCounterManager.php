@@ -386,11 +386,11 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // The last time the Data was refreshed by Google. Not always available from Google.
     $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
 
-    // The first selfLink query to Google. Helpful for debugging from the dashboard.
+    // The first selfLink query to Google. Helpful for debugging in the dashboard.
     $this->state->set('google_analytics_counter.most_recent_query_' . $profile_id, $ga_feed->results->selfLink);
 
-    // The total number of pageViews for this profile from start_date to end_date.
-    $this->state->set('google_analytics_counter.total_pageviews_' . $profile_id, $ga_feed->results->totalsForAllResults['pageviews']);
+    // The total number of pageViews and profile name for this profile from start_date to end_date.
+    $this->state->set('google_analytics_counter.total_pageviews_' . $profile_id, [$ga_feed->results->totalsForAllResults['pageviews'] => $ga_feed->results->profileName]);
 
     // The total number of pagePaths for this profile from start_date to end_date.
     $this->state->set('google_analytics_counter.total_paths_' . $profile_id, $ga_feed->results->totalResults);

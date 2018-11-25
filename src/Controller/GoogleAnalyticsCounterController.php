@@ -106,7 +106,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#value' => $this->t('Information on this page is updated during cron runs.') . '</h4>',
     ];
 
-    // The Google section.
+    // Information from Google.
     $build['google_info'] = [
       '#type' => 'details',
       '#title' => $this->t('Information from Google Analytics API'),
@@ -174,7 +174,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#value' => $this->t('Refer to your <a href=:href target="_blank">@href</a> page to view quotas.', $t_args),
     ];
 
-    // The Drupal section.
+    // Information from Drupal.
     $build['drupal_info'] = [
       '#type' => 'details',
       '#title' => $this->t('Information from this site'),
@@ -284,7 +284,14 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       ];
     }
 
-    $build['drupal_info']['last_cron_run'] = [
+    // Cron Information.
+    $build['cron_info'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Cron Information'),
+      '#open' => TRUE,
+    ];
+
+    $build['cron_info']['last_cron_run'] = [
       '#type' => 'html_tag',
       '#tag' => 'p',
       '#value' => $this->t("Cron's last successful run: %time ago.", ['%time' => $this->dateFormatter->formatTimeDiffSince($this->state->get('system.cron_last'))]),
@@ -301,7 +308,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
         ])->toString(),
         '@href' => 'Run cron immediately.',
       ];
-      $build['drupal_info']['run_cron'] = [
+      $build['cron_info']['run_cron'] = [
         '#type' => 'html_tag',
         '#tag' => 'p',
         '#value' => $this->t('<a href=:href>@href</a>', $t_args),

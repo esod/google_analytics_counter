@@ -63,7 +63,7 @@ class GoogleAnalyticsCounterSettingsTest extends BrowserTestBase {
     $edit = [
       'cron_interval' => 0,
       'chunk_to_fetch' => 5000,
-      'api_dayquota' => 10000,
+      'api_dayquota' => 50000,
       'cache_length' => 24,
     ];
 

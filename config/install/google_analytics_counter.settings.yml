@@ -4,7 +4,7 @@ general_settings:
   redirect_uri: ''
   cron_interval: 30
   chunk_to_fetch: 1000
-  api_dayquota: 10000
+  api_dayquota: 50000
   cache_length: 86400
   queue_time: 120
   start_date: '-1 day'

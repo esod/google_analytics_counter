@@ -20,11 +20,16 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
    * @return array
    */
   public static function checkProfileIds() {
+    $config = \Drupal::config('google_analytics_counter.settings');
+
     // There may not yet be profile ids, depending on whether cron has been run.
-    $profile_ids = [];
+    // Todo: Why profile_ids in both state and config?
     if (!empty(\Drupal::state()->get('google_analytics_counter.profile_ids'))) {
       $profile_ids = \Drupal::state()
         ->get('google_analytics_counter.profile_ids');
+    }
+    else {
+      $profile_ids = $config->get('general_settings.profile_ids');
     }
 
     return $profile_ids;

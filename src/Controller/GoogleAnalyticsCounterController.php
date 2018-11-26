@@ -114,50 +114,63 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     ];
 
     $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
-    $t_args = $this->getStartDateEndDate();
-    foreach ($profile_ids as $profile_id) {
-      // Get and format total pageviews.
-      $total_pageviews = '';
-      if (!empty($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))) {
-        $total_pageviews = number_format(key($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id)));
-      }
-      $t_args += ['%total_pageviews' => $total_pageviews];
-      $build['google_info']['total_pageviews_' . $profile_id] = [
-        '#type' => 'html_tag',
-        '#tag' => 'p',
-        '#value' => $this->t('%total_pageviews pageviews were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
-      ];
-
-      // Get and format total paths.
+    if ($profile_ids) {
       $t_args = $this->getStartDateEndDate();
-      $t_args += ['%total_paths' => number_format($this->state->get('google_analytics_counter.total_paths_' . $profile_id))];
-      $build['google_info']['total_paths_' . $profile_id] = [
+      $t_arg = '';
+      foreach ($profile_ids as $profile_id) {
+        // Get and format total pageviews.
+        $total_pageviews = '';
+        if (!empty($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))) {
+          $total_pageviews = number_format(key($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id)));
+        }
+        $t_args += ['%total_pageviews' => $total_pageviews];
+        $build['google_info']['total_pageviews_' . $profile_id] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->t('%total_pageviews pageviews were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+        ];
+
+        // Get and format total paths.
+        $t_args = $this->getStartDateEndDate();
+        $t_args += ['%total_paths' => number_format($this->state->get('google_analytics_counter.total_paths_' . $profile_id))];
+        $build['google_info']['total_paths_' . $profile_id] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->t('%total_paths paths were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+        ];
+
+        // Get the most recent query or print a helpful message. Helpful for site builders.
+        if (!$this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)) {
+          $t_arg = ['%most_recent_query' => "No query has been run yet or Google is not running queries from your system. See the module's README.md or Google's documentation."];
+        }
+        else {
+          $t_arg = ['%most_recent_query' => $this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)];
+        }
+      }
+
+      $build['google_info']['google_query'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Recent query to Google'),
+        '#open' => FALSE,
+      ];
+      $build['google_info']['google_query']['most_recent_query'] = [
         '#type' => 'html_tag',
         '#tag' => 'p',
-        '#value' => $this->t('%total_paths paths were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+        '#value' => $this->t('%most_recent_query', $t_arg) . '<br /><br />' . $this->t('The access_token needs to be included with the query. Get the access_token with <em>drush state-get google_analytics_counter.access_token</em>'),
       ];
     }
-
-    // Get the most recent query or print a helpful message. Helpful for site builders.
-    $t_arg = '';
-    foreach ($profile_ids as $profile_id) {
-      if (!$this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)) {
-        $t_arg = ['%most_recent_query' => "No query has been run yet or Google is not running queries from your system. See the module's README.md or Google's documentation."];
-      }
-      else {
-        $t_arg = ['%most_recent_query' => $this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)];
-      }
+    else {
+      $t_args = [
+        ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
+          ->toString(),
+        '@href' => 'Google View',
+      ];
+      $build['google_info']['in_case'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('Add at least one <a href=:href>@href</a> to see information about pageviews and paths.', $t_args),
+      ];
     }
-    $build['google_info']['google_query'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Recent query to Google'),
-      '#open' => FALSE,
-    ];
-    $build['google_info']['google_query']['most_recent_query'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('%most_recent_query', $t_arg) . '<br /><br />' . $this->t('The access_token needs to be included with the query. Get the access_token with <em>drush state-get google_analytics_counter.access_token</em>'),
-    ];
 
     // If available, print dataLastRefreshed from Google.
     $date_formatted = !empty($this->state->get('google_analytics_counter.data_last_refreshed')) ? $this->dateFormatter->format($this->state->get('google_analytics_counter.data_last_refreshed'), 'custom', 'M d, Y h:i:sa') : '';

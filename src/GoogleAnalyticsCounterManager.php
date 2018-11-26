@@ -616,12 +616,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         'pageview_total' => $sum_of_pageviews,
         'profile_id' => $profile_id,
       ])
+      ->condition('profile_id', $profile_id)
       ->execute();
-
-    // Remove rows for which there is no profile id.
-    //$query = $this->connection->delete('google_analytics_counter_storage');
-    //$query->condition('profile_id', $profile_id, '!=');
-    //$query->execute();
 
     // This is where the module gets expensive.
     // Update the Google Analytics Counter field if it exists.

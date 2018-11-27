@@ -89,6 +89,8 @@ class GoogleAnalyticsCounterController extends ControllerBase {
    * {@inheritdoc}
    */
   public function dashboard() {
+    $config = $this->config;
+
     if (!$this->manager->isAuthenticated() === TRUE) {
       $build = [];
       GoogleAnalyticsCounterHelper::notAuthenticatedMessage();
@@ -113,7 +115,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => TRUE,
     ];
 
-    $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
+    $profile_ids = $config->get('general_settings.profile_ids');
     if ($profile_ids) {
       $t_args = $this->getStartDateEndDate();
       $t_arg = '';
@@ -247,7 +249,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => FALSE,
     ];
 
-    $profile_ids  = GoogleAnalyticsCounterHelper::checkProfileIds();
+    $profile_ids = $config->get('general_settings.profile_ids');
     foreach ($profile_ids as $profile_id) {
       // Top Twenty Results for Google Analytics Counter table.
       $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [

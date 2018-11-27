@@ -102,11 +102,13 @@ class GoogleAnalyticsCounterRevokeForm extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $config = \Drupal::config('google_analytics_counter.settings');
+
     // Revoke the state values.
     $this->manager->revoke();
 
     // Revoke the profile id state values.
-    $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
+    $profile_ids = $config->get('general_settings.profile_ids');
     foreach ($profile_ids as $profile_id) {
       $this->manager->revokeProfiles($profile_id);
     }

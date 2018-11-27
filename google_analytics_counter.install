@@ -135,6 +135,8 @@ function google_analytics_counter_schema() {
  * Implements hook_uninstall().
  */
 function google_analytics_counter_uninstall() {
+  $config = \Drupal::config('google_analytics_counter.settings');
+
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = Drupal::service('google_analytics_counter.manager');
 
@@ -142,13 +144,10 @@ function google_analytics_counter_uninstall() {
   $manager->revoke();
 
   // Revoke the profile id state values.
-  $profile_ids = GoogleAnalyticsCounterHelper::checkProfileIds();
+  $profile_ids = $config->get('general_settings.profile_ids');
   foreach ($profile_ids as $profile_id) {
     $manager->revokeProfiles($profile_id);
   }
-
-  // Now delete profile_ids.
-  \Drupal::state()->delete('google_analytics_counter.profile_ids');
 
   // Remove queued items from the database.
   GoogleAnalyticsCounterHelper::removeQueuedItems();

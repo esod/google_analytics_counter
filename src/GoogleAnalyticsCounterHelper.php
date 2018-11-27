@@ -14,27 +14,18 @@ use Drupal\node\NodeTypeInterface;
  */
 class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
 
-  /**
-   * Makes certain there is a $profile_ids array. Helpful for before cron runs.
-   *
-   * @return array
-   */
-  public static function checkProfileIds() {
-    $config = \Drupal::config('google_analytics_counter.settings');
-
-    // There may not yet be profile ids, depending on whether cron has been run.
-    // Todo: Why profile_ids in both state and config?
-    if (!empty(\Drupal::state()->get('google_analytics_counter.profile_ids'))) {
-      $profile_ids = \Drupal::state()
-        ->get('google_analytics_counter.profile_ids');
-    }
-    else {
-      $profile_ids = $config->get('general_settings.profile_ids');
-    }
-
-    return $profile_ids;
-  }
-
+//  /**
+//   * Makes certain there is a $profile_ids array. Helpful for before cron runs.
+//   *
+//   * @return array
+//   */
+//  public static function checkProfileIds() {
+//    $config = \Drupal::config('google_analytics_counter.settings');
+//    $profile_ids = $config->get('general_settings.profile_ids');
+//
+//    return $profile_ids;
+//  }
+//
   /**
    * Remove queued items from the database.
    */
@@ -103,6 +94,7 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
    */
   public static function googleProjectName() {
     $config = \Drupal::config('google_analytics_counter.settings');
+
     $project_name = !empty($config->get('general_settings.project_name')) ?
       Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas?project=' . $config->get('general_settings.project_name'))
         ->toString() :

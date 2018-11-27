@@ -41,19 +41,22 @@ function google_analytics_counter_cron() {
     return;
   }
 
-  // Convert profile_id to an array.
-  $profile_id = $config->get('general_settings.profile_id');
-
+  // Proceed no further if not authenticated or no Google Views have been added.
+  /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
+  $manager = \Drupal::service('google_analytics_counter.manager');
   $profile_ids = $config->get('general_settings.profile_ids');
-  // Store $profiles_ids here since they may have been changed.
-  \Drupal::state()->set('google_analytics_counter.profile_ids', $profile_ids);
-
-  // Query Google and get results for one or more profile_ids.
-  _gac_cron_multiple_profile_ids($profile_ids);
+  if (!$manager->isAuthenticated() || !$profile_ids) {
+    \Drupal::logger('google_analytics_counter')->alert('Google Analytics Counter is not authenticated or no Google Views have been added.');
+    return;
+  }
+  else {
+    _gac_cron_multiple_profile_ids($profile_ids);
+  }
 }
 
 /**
  * Gets results from google with one or more profile_ids.
+ *
  * @param array $profile_ids
  *   The profile id used for google query.
  */
@@ -62,17 +65,14 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
 
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = \Drupal::service('google_analytics_counter.manager');
-  $queue = \Drupal::queue('google_analytics_counter_worker');
-  if (!$manager->isAuthenticated()) {
-    \Drupal::logger('google_analytics_counter')->alert('Google Analytics Counter is not authenticated.');
-    return;
-  }
 
   // Save the total number of published nodes.
   $num_rows = $manager->getCount('node_field_data');
   \Drupal::state()->set('google_analytics_counter.total_nodes', $num_rows);
 
+  $queue = \Drupal::queue('google_analytics_counter_worker');
   foreach ($profile_ids as $key => $profile_id) {
+    drush_print($profile_id);
     try {
       // Fetch the total results from Google first.
       $ga_feed = $manager->getTotalResults($profile_id);

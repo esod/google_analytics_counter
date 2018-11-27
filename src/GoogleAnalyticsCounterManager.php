@@ -443,7 +443,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // It's the front page.
     if ($this->pathMatcher->isFrontPage()) {
       $aliases = ['/'];
-      $sum_of_pageviews = $this->sumPageviews($aliases);
+      $total_pageviews = $this->totalPageviews($aliases);
     }
     else {
       // Look up the alias, with, and without trailing slash.
@@ -453,10 +453,10 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         $path . '/',
       ];
 
-      $sum_of_pageviews = $this->sumPageviews($aliases);
+      $total_pageviews = $this->totalPageviews($aliases);
     }
 
-    return number_format($sum_of_pageviews);
+    return number_format($total_pageviews);
   }
 
   /**
@@ -512,9 +512,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
       // Update the Google Analytics Counter.
       $this->connection->merge('google_analytics_counter')
-        ->key('pagepath_hash', md5($page_path))
+        ->key('pagepath_hash', md5($page_path . $profile_id))
         ->fields([
-          // Escape the path see https://www.drupal.org/node/2381703
           'pagepath' => $page_path,
           'pageviews' => $value['pageviews'],
           'profile_id' => $profile_id,
@@ -562,22 +561,26 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     // It's the front page
     // Todo: Could be brittle
     if ($nid == substr(\Drupal::configFactory()->get('system.site')->get('page.front'), 6)) {
-      $sum_of_pageviews = $this->sumPageviews(['/']);
-      $this->updateCounterStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
+      $total_pageviews = $this->totalPageviews(['/'], $profile_id);
+      $this->updateCounterStorage($nid, $total_pageviews, $profile_id, $bundle, $vid);
     }
     else {
-      $sum_of_pageviews = $this->sumPageviews(array_unique($aliases));
-      $this->updateCounterStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
+      $total_pageviews = $this->totalPageviews(array_unique($aliases), $profile_id);
+      $this->updateCounterStorage($nid, $total_pageviews, $profile_id, $bundle, $vid);
     }
   }
   /**
    * Look up the count via the hash of the paths.
    *
    * @param $aliases
+   *   The pagepaths.
+   * @param $profile_id
+   *   The current profile_id.
+   *
    * @return string
    *   Count of views.
    */
-  protected function sumPageviews($aliases) {
+  protected function totalPageviews($aliases, $profile_id = '') {
     // $aliases can make pageview_total greater than pageviews
     // because $aliases can include page aliases, node/id, and node/id/ URIs.
     $hashes = array_map('md5', $aliases);
@@ -585,12 +588,12 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       ->fields('gac', ['pageviews'])
       ->condition('pagepath_hash', $hashes, 'IN')
       ->execute();
-    $sum_of_pageviews = 0;
+    $total_pageviews = 0;
     foreach ($path_counts as $path_count) {
-      $sum_of_pageviews += $path_count->pageviews;
+      $total_pageviews += $path_count->pageviews;
     }
 
-    return $sum_of_pageviews;
+    return $total_pageviews;
   }
 
   /**
@@ -598,7 +601,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @param int $nid
    *   Node id value.
-   * @param int $sum_of_pageviews
+   * @param int $total_pageviews
    *   Count of page views.
    * @param string $profile_id
    *   The profile id used in the google query.
@@ -609,14 +612,13 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @throws \Exception
    */
-  protected function updateCounterStorage($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
+  protected function updateCounterStorage($nid, $total_pageviews, $profile_id, $bundle, $vid) {
     $this->connection->merge('google_analytics_counter_storage')
       ->key('nid', $nid)
       ->fields([
-        'pageview_total' => $sum_of_pageviews,
+        'pageview_total' => $total_pageviews,
         'profile_id' => $profile_id,
       ])
-      ->condition('profile_id', $profile_id)
       ->execute();
 
     // This is where the module gets expensive.
@@ -631,7 +633,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         'revision_id', $vid,
         'langcode', 'en',
         ])
-      ->key('entity_id', $nid)
       ->fields([
         'bundle' => $bundle,
         'deleted' => 0,
@@ -639,7 +640,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         'revision_id' => $vid,
         'langcode' => 'en',
         'delta' => 0,
-        'field_google_analytics_counter_value' => $sum_of_pageviews,
+        'field_google_analytics_counter_value' => $total_pageviews,
       ])
       ->execute();
   }
@@ -759,9 +760,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'google_analytics_counter.total_pageviews_' . $profile_id,
       'google_analytics_counter.total_paths_' . $profile_id,
     ]);
-
-    // Delete profile_ids now.
-    $this->state->delete('google_analytics_counter.profile_ids');
   }
 
 }

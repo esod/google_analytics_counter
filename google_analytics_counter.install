@@ -269,24 +269,24 @@ function google_analytics_counter_update_8009() {
   if ($schema->fieldExists('google_analytics_counter', 'profile_id')) {
     return;
   }
-  $google_analytics_counter = [
+  $spec = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
     'length' => 20,
     'not null' => FALSE,
   ];
-  $schema->addField('google_analytics_counter', 'profile_id', $google_analytics_counter);
+  $schema->addField('google_analytics_counter', 'profile_id', $spec);
 
   if ($schema->fieldExists('google_analytics_counter_storage', 'profile_id')) {
     return;
   }
-  $google_analytics_counter_storage = [
+  $spec = [
     'type' => 'varchar',
     'description' => "The Google profile id.",
     'length' => 20,
     'not null' => FALSE,
   ];
-  $schema->addField('google_analytics_counter_storage', 'profile_id', $google_analytics_counter_storage);
+  $schema->addField('google_analytics_counter_storage', 'profile_id', $spec);
 }
 
 /**

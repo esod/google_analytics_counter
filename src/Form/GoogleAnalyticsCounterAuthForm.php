@@ -140,7 +140,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '</li><ul><li>' .  $this->t('Follow the instructions in the README.md to set up a project in Google Analytics.') .
       '</li><li>' .  $this->t('And then click the Authenticate with Google Analytics button above.') .
       '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select the') . '<strong>' . $this->t(' Google Views ') . '</strong>' . $this->t('to collect analytics from and click Save configuration.') .
-      '</li><ul><li>' .  $this->t("If you are not authenticated, 'Unauthenticated' is the only available option for ") .  '<strong>' . $this->t('Google View') . '</strong>.</li></ul></ol>';
+      '</li><ul><li>' .  $this->t('If you are not authenticated,') . '<strong>' . $this->t(' Unauthenticated ') . '</strong>' . $this->t('is the only available option for ') .  '<strong>' . $this->t('Google Views') . '</strong>.</li></ul></ol>';
 
     $form['setup'] = [
       '#type' => 'markup',
@@ -206,7 +206,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#title' => $this->t('Google Views'),
       '#options' => $this->manager->getWebPropertiesOptions(),
       '#default_value' => $config->get('general_settings.profile_ids'),
-      '#description' => $this->t("Select Google Analytics view here. After cron runs, see the <a href=:href>@href</a>'s Top Twenty Results for each view. If you are not authenticated, 'Unauthenticated' is the only available option.", $t_args),
+      '#description' => $this->t("Select Google Analytics view here. After cron runs, see the <a href=:href>@href</a>'s Top Twenty Results for each view. If you are not authenticated,") . '<strong>' . $this->t(' Unauthenticated ') . '</strong>' . $this->t('is the only available option.'),
       '#weight' => 15,
     ];
 

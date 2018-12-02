@@ -241,33 +241,37 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *   Array of options.
    */
   public function getWebPropertiesOptions() {
-    // When not authenticated, there are no options.
-    if (!$this->isAuthenticated()) {
-      return $options = [];
-    }
+    try {
+      // When not authenticated, the only option is 'unauthenticated'.
 
-    // Get the profiles information from Google.
-    $feed = $this->newGaFeed();
-    $web_properties = $feed->queryWebProperties()->results->items;
-    $profiles = $feed->queryProfiles()->results->items;
+      // Get the profiles information from Google.
+      $feed = $this->newGaFeed();
+      $web_properties = $feed->queryWebProperties()->results->items;
+      $profiles = $feed->queryProfiles()->results->items;
 
-    $options = [];
-    // Add optgroups for each web property.
-    if (!empty($profiles)) {
-      foreach ($profiles as $profile) {
-        $webprop = NULL;
-        foreach ($web_properties as $web_property) {
-          if ($web_property->id == $profile->webPropertyId) {
-            $webprop = $web_property;
-            break;
+      $options = [];
+      // Add optgroups for each web property.
+      if (!empty($profiles)) {
+        foreach ($profiles as $profile) {
+          $webprop = NULL;
+          foreach ($web_properties as $web_property) {
+            if ($web_property->id == $profile->webPropertyId) {
+              $webprop = $web_property;
+              break;
+            }
           }
+
+          $options[$webprop->name][$profile->id] = $profile->name . ' (' . $profile->id . ')';
         }
-
-        $options[$webprop->name][$profile->id] = $profile->name . ' (' . $profile->id . ')';
       }
-    }
 
-    return $options;
+      return $options;
+    }
+    catch (Exception $e) {
+      $this->messenger->addError($this->t('There was an authentication error. Message: %message', ['%message' => $e->getMessage()]));
+      $options = ['unauthenticated' => 'Unauthenticated'];
+      return $options;
+    }
   }
 
   /**

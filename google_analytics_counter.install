@@ -309,3 +309,22 @@ function google_analytics_counter_update_8010() {
     ->clear('general_settings.profile_id')
     ->save();
 }
+
+/**
+ * Issue #3003875: Remove data from storage tables
+ */
+function google_analytics_counter_update_8011() {
+
+  $database = \Drupal::database();
+  if ($database->schema()->tableExists('google_analytics_counter')) {
+    \Drupal::database()
+      ->truncate('google_analytics_counter')
+      ->execute();
+  }
+
+  if ($database->schema()->tableExists('google_analytics_counter_storage')) {
+    \Drupal::database()
+      ->truncate('google_analytics_counter_storage')
+      ->execute();
+  }
+}

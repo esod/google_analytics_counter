@@ -200,12 +200,11 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#weight' => 14,
     ];
 
-    $options = !empty($this->manager->getWebPropertiesOptions()) ? $this->manager->getWebPropertiesOptions() : ['unauthenticated' => 'Unauthenticated'];
     $form['profile_ids'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => $this->t('Google Views'),
-      '#options' => $options,
+      '#options' => $this->manager->getWebPropertiesOptions(),
       '#default_value' => $config->get('general_settings.profile_ids'),
       '#description' => $this->t("Select Google Analytics view here. After cron runs, see the <a href=:href>@href</a>'s Top Twenty Results for each view. If you are not authenticated, 'Unauthenticated' is the only available option.", $t_args),
       '#weight' => 15,

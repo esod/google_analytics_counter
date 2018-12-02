@@ -137,7 +137,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
         $response->addCommand(new OpenModalDialogCommand('The custom google analytics counter field has been removed:', 'No content types have the custom google analytics counter field.', ['width' => 800]));
       }
       else {
-        $response->addCommand(new OpenModalDialogCommand('The checked content types have the custom google analytics counter field:', 'Please go to the Manage form display and the Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
+        $response->addCommand(new OpenModalDialogCommand('The checked content types have the custom google analytics counter field:', 'Now go to the Manage form display and the Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
       }
     }
     return $response;

@@ -263,7 +263,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
         '#links' => [
           'select' => [
             'title' => $this->t('Select'),
-            'url' => Url::fromRoute('google_analytics_counter.type_edit_form'),
+            'url' => Url::fromRoute('google_analytics_counter.configure_types_form'),
             'attributes' => [
               'class' => ['use-ajax'],
               'data-dialog-type' => 'modal',

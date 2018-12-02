@@ -829,12 +829,21 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @see GoogleAnalyticsCounterConfigureTypesForm
    */
   public function gacDeleteField(NodeTypeInterface $type) {
-    // Check if field storage exists.
-    $config = FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter');
+    // Check if field exists on the content type.
+    $content_type = $type->id();
+//    dsm($content_type);
+    $config = FieldConfig::loadByName('node', $content_type, 'field_google_analytics_counter');
     if (!isset($config)) {
       return NULL;
     }
-    FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter')->delete();
+    // Delete the field from the content type.
+    FieldConfig::loadByName('node', $content_type, 'field_google_analytics_counter')->delete();
+
+    // Delete the gac_type_{content_type} from configuration.
+    $config_factory = \Drupal::configFactory();
+    $config_factory->getEditable('google_analytics_counter.settings')
+      ->set("gac_type_$content_type", 0)
+      ->save();
   }
 
   /****************************************************************************/

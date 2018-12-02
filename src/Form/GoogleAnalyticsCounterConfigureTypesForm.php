@@ -60,7 +60,7 @@ class GoogleAnalyticsCounterConfigureTypesForm extends FormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'google_analytics_counter_type_edit_form';
+    return 'google_analytics_counter_configure_types_form';
   }
 
   /**
@@ -133,10 +133,10 @@ class GoogleAnalyticsCounterConfigureTypesForm extends FormBase {
       // Check if field storage exists.
       $config = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
       if (!isset($config)) {
-        $response->addCommand(new OpenModalDialogCommand('The custom google analytics counter field has been removed:', 'No content types have the custom google analytics counter field.', ['width' => 800]));
+        $response->addCommand(new OpenModalDialogCommand($this->t('The custom google analytics counter field has been removed:'), $this->t('No content types have the custom google analytics counter field.'), ['width' => 800]));
       }
       else {
-        $response->addCommand(new OpenModalDialogCommand('The checked content types have the custom google analytics counter field:', 'Now go to the Manage form display and the Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.', ['width' => 800]));
+        $response->addCommand(new OpenModalDialogCommand($this->t('The checked content types have the custom google analytics counter field:'), $this->t('Now go to the Manage form display and the Manage display tabs of the content type (e.g. admin/structure/types/manage/article/display) and enable the custom field as you wish.'), ['width' => 800]));
       }
     }
     return $response;
@@ -172,12 +172,13 @@ class GoogleAnalyticsCounterConfigureTypesForm extends FormBase {
     $values = $form_state->cleanValues()->getValues();
     $config_factory = \Drupal::configFactory();
     foreach ($values as $key => $value) {
-      $field = FieldConfig::loadByName('node', substr($key, 9), 'field_google_analytics_counter');
 
-      if (!empty($field)) {
-      $config_factory->getEditable('google_analytics_counter.settings')
-        ->set("general_settings.$key", 1)
-        ->save();
+      // Update the gac configuration.
+      // Todo. Fold this into gacAddField() and gacDeleteField().
+      if ($value == 1) {
+        $config_factory->getEditable('google_analytics_counter.settings')
+          ->set("general_settings.$key", 1)
+          ->save();
       }
       else {
         $config_factory->getEditable('google_analytics_counter.settings')

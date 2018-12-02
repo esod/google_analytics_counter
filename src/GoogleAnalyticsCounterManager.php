@@ -826,7 +826,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return null|void
    * @throws \Drupal\Core\Entity\EntityStorageException
    *
-   * @see GoogleAnalyticsCounterConfigureContentTypesForm
+   * @see GoogleAnalyticsCounterConfigureTypesForm
    */
   public function gacDeleteField(NodeTypeInterface $type) {
     // Check if field storage exists.

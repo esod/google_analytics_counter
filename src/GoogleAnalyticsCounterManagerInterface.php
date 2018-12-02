@@ -176,7 +176,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return null|void
    * @throws \Drupal\Core\Entity\EntityStorageException
    *
-   * @see GoogleAnalyticsCounterConfigureContentTypesForm
+   * @see GoogleAnalyticsCounterConfigureTypesForm
    */
   public function gacDeleteField(NodeTypeInterface $type);
 

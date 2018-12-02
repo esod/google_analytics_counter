@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @internal
  */
-class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
+class GoogleAnalyticsCounterConfigureTypesForm extends FormBase {
 
   /**
    * The Messenger service.
@@ -75,7 +75,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $options = NULL) {
     $config = $this->config('google_analytics_counter.settings');
-    $form['#prefix'] = '<div id="gac_modal_form">';
+    $form['#prefix'] = '<div id="gac_configure_types_modal_form">';
     $form['#suffix'] = '</div>';
 
     // The status messages that will contain any form errors.
@@ -125,7 +125,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
 
     // If there are any form errors, re-display the form.
     if ($form_state->hasAnyErrors()) {
-      $response->addCommand(new ReplaceCommand('#gac_modal_form', $form));
+      $response->addCommand(new ReplaceCommand('#gac_configure_types_modal_form', $form));
     }
     else {
       $response->addCommand(new CloseDialogCommand());
@@ -150,7 +150,7 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
 
     // If there are any form errors, re-display the form.
     if ($form_state->hasAnyErrors()) {
-      $response->addCommand(new ReplaceCommand('#gac_modal_form', $form));
+      $response->addCommand(new ReplaceCommand('#gac_configure_types_modal_form', $form));
     }
     else {
       $response->addCommand(new CloseDialogCommand());

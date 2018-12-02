@@ -93,10 +93,10 @@ class GoogleAnalyticsCounterController extends ControllerBase {
 
     if (!$this->manager->isAuthenticated() === TRUE) {
       $build = [];
-      GoogleAnalyticsCounterHelper::notAuthenticatedMessage();
+      $this->manager->notAuthenticatedMessage();
 
       // Add a link to the revoke form.
-      $build = GoogleAnalyticsCounterHelper::revokeAuthenticationMessage($build);
+      $build = $this->manager->revokeAuthenticationMessage($build);
 
       return $build;
     }
@@ -120,6 +120,12 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       $t_args = $this->getStartDateEndDate();
       $t_arg = '';
       foreach ($profile_ids as $profile_id) {
+        $build['google_info']['profile_name_' . $profile_id] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->manager->getProfileName($profile_id),
+        ];
+
         // Get and format total pageviews.
         if (!empty($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))) {
           $total_pageviews = number_format(key($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id)));
@@ -187,9 +193,8 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     ];
 
     // Print a message about Google quotas with an embedded link to Analytics API.
-    $project_name = GoogleAnalyticsCounterHelper::googleProjectName();
     $t_args = [
-      ':href' => $project_name,
+      ':href' => $this->manager->googleProjectName(),
       '@href' => 'Analytics API',
     ];
     $build['google_info']['daily_quota'] = [
@@ -256,7 +261,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       // Top Twenty Results for Google Analytics Counter table.
       $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [
         '#type' => 'details',
-        '#title' => $this->t('Pagepaths for ') . $profile_id,
+        '#title' => $this->t('Pagepaths for ') . $this->manager->getProfileName($profile_id),
         '#open' => FALSE,
         '#attributes' => [
           'class' => ['google-analytics-counter-counter'],
@@ -283,7 +288,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       // Top Twenty Results for Google Analytics Counter Storage table.
       $build['drupal_info']['top_twenty_results']['storage_' . $profile_id] = [
         '#type' => 'details',
-        '#title' => $this->t('Pageview Totals for ') . $profile_id,
+        '#title' => $this->t('Pageview Totals for ') . $this->manager->getProfileName($profile_id),
         '#open' => FALSE,
         '#attributes' => [
           'class' => ['google-analytics-counter-storage'],
@@ -340,7 +345,7 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     }
 
     // Add a link to the revoke form.
-    $build = GoogleAnalyticsCounterHelper::revokeAuthenticationMessage($build);
+    $build = $this->manager->revokeAuthenticationMessage($build);
 
     return $build;
   }

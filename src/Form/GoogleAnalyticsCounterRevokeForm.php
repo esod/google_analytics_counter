@@ -6,7 +6,6 @@ use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Url;
-use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 

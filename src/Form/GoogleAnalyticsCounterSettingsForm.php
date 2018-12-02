@@ -8,7 +8,6 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Url;
-use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -104,11 +103,10 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
-    $project_name = GoogleAnalyticsCounterHelper::googleProjectName();
     $t_args = [
       ':href' => Url::fromUri('https://developers.google.com/analytics/devguides/reporting/core/v3/limits-quotas')->toString(),
       '@href' => 'Limits and Quotas on API Requests',
-      ':href2' => $project_name,
+      ':href2' => $this->manager->googleProjectName(),
       '@href2' => 'Analytics API',
     ];
     $form['api_dayquota'] = [
@@ -279,7 +277,7 @@ class GoogleAnalyticsCounterSettingsForm extends ConfigFormBase {
     ];
 
     if ($this->manager->isAuthenticated() !== TRUE) {
-      GoogleAnalyticsCounterHelper::notAuthenticatedMessage();
+      $this->manager->notAuthenticatedMessage();
     }
 
     return parent::buildForm($form, $form_state);

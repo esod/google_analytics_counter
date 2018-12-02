@@ -2,6 +2,7 @@
 
 namespace Drupal\google_analytics_counter;
 
+use Drupal\node\NodeTypeInterface;
 
 /**
  * Class GoogleAnalyticsCounterManager.
@@ -80,6 +81,16 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function reportData($parameters = [], $cache_options = []);
 
   /**
+   * Get the Profile name of the Google view from Drupal.
+   *
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   *
+   * @return string mixed
+   */
+  public function getProfileName($profile_id);
+
+  /**
    * Get the count of pageviews for a path.
    *
    * @param string $path
@@ -89,18 +100,6 @@ interface GoogleAnalyticsCounterManagerInterface {
    *   Count of page views.
    */
   public function displayGacCount($path);
-
-  /**
-   * Returns a formatted list of AMP-enabled content types.
-   *
-   * @return array
-   *   A list of content types that provides the following:
-   *     - Each content type enabled on the site.
-   *     - The enabled/disabled status for each content type.
-   *     - A link to enable/disable view modes for each content type.
-   *     - A link to configure the AMP view mode, if enabled.
-   */
-  public function getGacContentTypes();
 
   /**
    * Update the path counts.
@@ -152,6 +151,59 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return mixed
    */
   public function getTopTwentyResults($table, $profile_id);
+
+  /**
+   * Adds the checked the fields.
+   *
+   * @param \Drupal\node\NodeTypeInterface $type
+   *   A node type entity.
+   * @param string $label
+   *   The formatter label display setting.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|\Drupal\field\Entity\FieldConfig|null
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public function gacAddField(NodeTypeInterface $type, $label = 'Google Analytics Counter');
+
+  /**
+   * Deletes the unchecked field configurations.
+   *
+   * @param \Drupal\node\NodeTypeInterface $type
+   *   A node type entity.
+   *
+   * @return null|void
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   *
+   * @see GoogleAnalyticsCounterConfigureContentTypesForm
+   */
+  public function gacDeleteField(NodeTypeInterface $type);
+
+  /**
+   * Prints a warning message when not authenticated.
+   *
+   * @param $build
+   *
+   */
+  public function notAuthenticatedMessage($build = []);
+
+  /**
+   * Revoke Google Authentication Message.
+   *
+   * @param $build
+   *
+   * @return mixed
+   */
+  public function revokeAuthenticationMessage($build);
+
+  /**
+   * Returns the link with the Google project name if it is available.
+   *
+   * @return string
+   *   Project name.
+   */
+  public function googleProjectName();
 
   /**
    * Programmatically revoke stored state values.

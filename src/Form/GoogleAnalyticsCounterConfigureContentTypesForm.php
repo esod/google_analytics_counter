@@ -11,7 +11,6 @@ use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -189,10 +188,10 @@ class GoogleAnalyticsCounterConfigureContentTypesForm extends FormBase {
       // Add the field if it has been checked.
       $type = \Drupal::service('entity.manager')->getStorage('node_type')->load(substr($key, 9));
       if ($value == 1) {
-        GoogleAnalyticsCounterHelper::gacAddField($type);
+        $this->manager->gacAddField($type);
       }
       else {
-        GoogleAnalyticsCounterHelper::gacDeleteField($type);
+        $this->manager->gacDeleteField($type);
       }
     }
   }

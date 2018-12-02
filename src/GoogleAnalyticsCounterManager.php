@@ -3,6 +3,7 @@
 namespace Drupal\google_analytics_counter;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
@@ -11,7 +12,10 @@ use Drupal\Core\Path\PathMatcherInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\node\NodeInterface;
+use Drupal\node\NodeTypeInterface;
 use Exception;
 use Psr\Log\LoggerInterface;
 
@@ -435,6 +439,28 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   }
 
   /**
+   * Get the Profile name of the Google view from Drupal.
+   *
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   *
+   * @return string mixed
+   */
+  public function getProfileName($profile_id) {
+
+    $profile_id = $this->state->get('google_analytics_counter.total_pageviews_' . $profile_id);
+    if (!empty($profile_id)) {
+      $profile_name = '<strong>' . $profile_id[key($profile_id)] . '</strong>';
+    }
+    else {
+      $profile_name = '<strong>' . $this->t('Profile name(s) are available after cron runs.') . '</strong>';
+    }
+    return $profile_name;
+  }
+
+
+
+  /**
    * Get the count of pageviews for a path.
    *
    * @param string $path
@@ -465,33 +491,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
 
     return number_format($total_pageviews);
   }
-
-  /**
-   * Returns a formatted list of AMP-enabled content types.
-   *
-   * @return array
-   *   A list of content types that provides the following:
-   *     - Each content type enabled on the site.
-   *     - The enabled/disabled status for each content type.
-   *     - A link to enable/disable view modes for each content type.
-   *     - A link to configure the AMP view mode, if enabled.
-   */
-  public function getGacContentTypes() {
-    $node_types = node_type_get_names();
-    $node_status_list = [];
-    $destination = Url::fromRoute("amp.settings")->toString();
-    foreach ($node_types as $bundle => $label) {
-      $configure = Url::fromRoute("entity.entity_view_display.node.view_mode", ['node_type' => $bundle, 'view_mode_name' => 'amp'], ['query' => ['destination' => $destination]])->toString();
-      $enable_disable = Url::fromRoute("entity.entity_view_display.node.default", ['node_type' => $bundle], ['query' => ['destination' => $destination]])->toString();
-        $node_status_list[] = t('@label is <em>enabled</em>: <a href=":configure">Configure AMP view mode</a> or <a href=":enable_disable">Disable AMP display</a>', array(
-          '@label' => $label,
-          ':configure' => $configure,
-          ':enable_disable' => $enable_disable,
-        ));
-    }
-    return $node_status_list;
-  }
-
 
   /****************************************************************************/
   // Query functions.
@@ -734,6 +733,168 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     }
 
     return $rows;
+  }
+
+  /****************************************************************************/
+  // Field functions.
+  /****************************************************************************/
+
+  /**
+   * Adds the checked the fields.
+   *
+   * @param \Drupal\node\NodeTypeInterface $type
+   *   A node type entity.
+   * @param string $label
+   *   The formatter label display setting.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|\Drupal\field\Entity\FieldConfig|null
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public function gacAddField(NodeTypeInterface $type, $label = 'Google Analytics Counter') {
+
+    // Check if field storage exists.
+    $config = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
+    if (!isset($config)) {
+      // Obtain configuration from yaml files
+      $config_path = 'modules/contrib/google_analytics_counter/config/optional';
+      $source = new FileStorage($config_path);
+
+      // Obtain the storage manager for field storage bases.
+      // Create the new field configuration from the yaml configuration and save.
+      \Drupal::entityTypeManager()->getStorage('field_storage_config')
+        ->create($source->read('field.storage.node.field_google_analytics_counter'))
+        ->save();
+    }
+
+    // Add the checked fields.
+    $field_storage = FieldStorageConfig::loadByName('node', 'field_google_analytics_counter');
+    $field = FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter');
+    if (empty($field)) {
+      $field = FieldConfig::create([
+        'field_storage' => $field_storage,
+        'bundle' => $type->id(),
+        'label' => $label,
+        'description' => t('This field stores Google Analytics pageviews.'),
+        'field_name' => 'field_google_analytics_counter',
+        'entity_type' => 'node',
+        'settings' => array('display_summary' => TRUE),
+      ]);
+      $field->save();
+
+      // Assign widget settings for the 'default' form mode.
+      entity_get_form_display('node', $type->id(), 'default')
+        ->setComponent('google_analytics_counter', array(
+          'type' => 'textfield',
+          '#maxlength' => 255,
+          '#default_value' => 0,
+          '#description' => t('blah, blah, blah'),
+        ))
+        ->save();
+
+      // Assign display settings for the 'default' and 'teaser' view modes.
+      entity_get_display('node', $type->id(), 'default')
+        ->setComponent('google_analytics_counter', array(
+          'label' => 'hidden',
+          'type' => 'textfield',
+        ))
+        ->save();
+
+      // The teaser view mode is created by the Standard profile and therefore
+      // might not exist.
+      $view_modes = \Drupal::entityManager()->getViewModes('node');
+      if (isset($view_modes['teaser'])) {
+        entity_get_display('node', $type->id(), 'teaser')
+          ->setComponent('google_analytics_counter', array(
+            'label' => 'hidden',
+            'type' => 'textfield',
+          ))
+          ->save();
+      }
+    }
+
+    return $field;
+  }
+
+  /**
+   * Deletes the unchecked field configurations.
+   *
+   * @param \Drupal\node\NodeTypeInterface $type
+   *   A node type entity.
+   *
+   * @return null|void
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   *
+   * @see GoogleAnalyticsCounterConfigureContentTypesForm
+   */
+  public function gacDeleteField(NodeTypeInterface $type) {
+    // Check if field storage exists.
+    $config = FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter');
+    if (!isset($config)) {
+      return NULL;
+    }
+    FieldConfig::loadByName('node', $type->id(), 'field_google_analytics_counter')->delete();
+  }
+
+  /****************************************************************************/
+  // Message functions.
+  /****************************************************************************/
+
+  /**
+   * Prints a warning message when not authenticated.
+   *
+   * @param $build
+   *
+   */
+  public function notAuthenticatedMessage($build = []) {
+    $t_arg = [
+      ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
+        ->toString(),
+      '@href' => 'Authentication',
+    ];
+    \Drupal::messenger()->addWarning(t('Google Analytics have not been authenticated! Google Analytics Counter cannot fetch any new data. Please authenticate with Google from the <a href=:href>@href</a> page.', $t_arg));
+
+    // Revoke Google authentication.
+    $this->revokeAuthenticationMessage($build);
+  }
+
+  /**
+   * Revoke Google Authentication Message.
+   *
+   * @param $build
+   * @return mixed
+   */
+  public function revokeAuthenticationMessage($build) {
+    $t_args = [
+      ':href' => Url::fromRoute('google_analytics_counter.admin_auth_revoke', [], ['absolute' => TRUE])
+        ->toString(),
+      '@href' => 'revoking Google authentication',
+    ];
+    $build['cron_info']['revoke_authentication'] = [
+      '#markup' => t("If there's a problem with OAUTH authentication, try <a href=:href>@href</a>.", $t_args),
+      '#prefix' => '<p>',
+      '#suffix' => '</p>',
+    ];
+    return $build;
+  }
+
+  /**
+   * Returns the link with the Google project name if it is available.
+   *
+   * @return string
+   *   Project name.
+   */
+  public function googleProjectName() {
+    $config = \Drupal::config('google_analytics_counter.settings');
+
+    $project_name = !empty($config->get('general_settings.project_name')) ?
+      Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas?project=' . $config->get('general_settings.project_name'))
+        ->toString() :
+      Url::fromUri('https://console.developers.google.com/apis/api/analytics.googleapis.com/quotas')
+        ->toString();
+
+    return $project_name;
   }
 
   /****************************************************************************/

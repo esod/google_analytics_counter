@@ -6,7 +6,6 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Drupal\Core\State\StateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -186,9 +185,8 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#weight' => 13,
     ];
 
-    $project_name = GoogleAnalyticsCounterHelper::googleProjectName();
     $t_args = [
-      ':href' => $project_name,
+      ':href' => $this->manager->googleProjectName(),
       '@href' => 'Analytics API',
     ];
 

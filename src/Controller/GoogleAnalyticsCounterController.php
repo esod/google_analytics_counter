@@ -121,9 +121,11 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       $t_arg = '';
       foreach ($profile_ids as $profile_id) {
         // Get and format total pageviews.
-        $total_pageviews = '';
         if (!empty($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))) {
           $total_pageviews = number_format(key($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id)));
+        }
+        else {
+          $total_pageviews = 0;
         }
         $t_args += ['%total_pageviews' => $total_pageviews];
         $build['google_info']['total_pageviews_' . $profile_id] = [

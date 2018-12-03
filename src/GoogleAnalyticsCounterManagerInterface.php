@@ -208,7 +208,7 @@ interface GoogleAnalyticsCounterManagerInterface {
   /**
    * Programmatically revoke stored state values.
    */
-  public function revoke();
+  public function gacDeleteState();
 
   /**
    * Programmatically revoke stored profile state values.
@@ -216,5 +216,5 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @param string $profile_id
    *   The profile id used in the google query.
    */
-  public function revokeProfiles($profile_id);
+  public function gacDeleteStates($profile_id);
 }

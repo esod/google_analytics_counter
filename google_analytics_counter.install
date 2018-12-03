@@ -141,12 +141,12 @@ function google_analytics_counter_uninstall() {
   $manager = Drupal::service('google_analytics_counter.manager');
 
   // Revoke the state values.
-  $manager->revoke();
+  $manager->gacDeleteState();
 
   // Revoke the profile id state values.
   $profile_ids = $config->get('general_settings.profile_ids');
   foreach ($profile_ids as $profile_id) {
-    $manager->revokeProfiles($profile_id);
+    $manager->gacDeleteStates($profile_id);
   }
 
   // Remove queued items from the database.

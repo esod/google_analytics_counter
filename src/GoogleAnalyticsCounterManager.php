@@ -453,7 +453,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       $profile_name = '<strong>' . $profile_id[key($profile_id)] . '</strong>';
     }
     else {
-      $profile_name = '<strong>' . $this->t('Profile name(s) are available after cron runs.') . '</strong>';
+      $profile_name = '<strong>' . $this->t('Profile name is available after cron runs.') . '</strong>';
     }
     return $profile_name;
   }
@@ -913,7 +913,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   /**
    * Programmatically revoke stored state values.
    */
-  public function revoke() {
+  public function gacDeleteState() {
     $this->state->deleteMultiple([
       'google_analytics_counter.access_token',
       'google_analytics_counter.cron_next_execution',
@@ -930,7 +930,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @param string $profile_id
    *   The profile id used in the google query.
    */
-  public function revokeProfiles($profile_id) {
+  public function gacDeleteStates($profile_id) {
     $this->state->deleteMultiple([
       'google_analytics_counter.data_step_' . $profile_id,
       'google_analytics_counter.most_recent_query_' . $profile_id,

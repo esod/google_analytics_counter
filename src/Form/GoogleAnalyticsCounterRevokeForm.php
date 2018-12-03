@@ -104,12 +104,12 @@ class GoogleAnalyticsCounterRevokeForm extends ConfirmFormBase {
     $config = \Drupal::config('google_analytics_counter.settings');
 
     // Revoke the state values.
-    $this->manager->revoke();
+    $this->manager->gacDeleteState();
 
     // Revoke the profile id state values.
     $profile_ids = $config->get('general_settings.profile_ids');
     foreach ($profile_ids as $profile_id) {
-      $this->manager->revokeProfiles($profile_id);
+      $this->manager->gacDeleteStates($profile_id);
     }
 
     // Set redirect.

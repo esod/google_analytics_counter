@@ -76,7 +76,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
     // Remove information that is not in Google views configuration.
     if (!\Drupal::state()->get('google_analytics_counter.total_pageviews_' . $profile_id)) {
       // Remove state information.
-      $manager->gacDeleteStates($profile_id);
+      $manager->gacDeleteStateWithId($profile_id);
 
       // Remove queued items.
       $database->delete('queue')

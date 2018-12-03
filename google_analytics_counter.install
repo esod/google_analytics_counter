@@ -146,7 +146,7 @@ function google_analytics_counter_uninstall() {
   // Revoke the profile id state values.
   $profile_ids = $config->get('general_settings.profile_ids');
   foreach ($profile_ids as $profile_id) {
-    $manager->gacDeleteStates($profile_id);
+    $manager->gacDeleteStateWithId($profile_id);
   }
 
   // Remove queued items from the database.

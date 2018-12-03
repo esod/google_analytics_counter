@@ -216,5 +216,5 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @param string $profile_id
    *   The profile id used in the google query.
    */
-  public function gacDeleteStates($profile_id);
+  public function gacDeleteStateWithId($profile_id);
 }

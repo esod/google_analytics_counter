@@ -930,7 +930,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @param string $profile_id
    *   The profile id used in the google query.
    */
-  public function gacDeleteStates($profile_id) {
+  public function gacDeleteStateWithId($profile_id) {
     $this->state->deleteMultiple([
       'google_analytics_counter.data_step_' . $profile_id,
       'google_analytics_counter.most_recent_query_' . $profile_id,

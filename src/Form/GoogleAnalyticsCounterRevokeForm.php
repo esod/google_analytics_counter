@@ -109,7 +109,7 @@ class GoogleAnalyticsCounterRevokeForm extends ConfirmFormBase {
     // Revoke the profile id state values.
     $profile_ids = $config->get('general_settings.profile_ids');
     foreach ($profile_ids as $profile_id) {
-      $this->manager->gacDeleteStates($profile_id);
+      $this->manager->gacDeleteStateWithId($profile_id);
     }
 
     // Set redirect.

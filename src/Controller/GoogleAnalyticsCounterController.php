@@ -7,7 +7,6 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DateFormatter;
 use Drupal\Core\State\StateInterface;
 use Drupal\Core\Url;
-use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 use Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 

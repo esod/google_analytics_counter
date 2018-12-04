@@ -301,14 +301,14 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
-    drush_print($step);
+//    drush_print($step);
     $chunk = $config->get('general_settings.chunk_to_fetch');
-    drush_print($chunk);
+//    drush_print($chunk);
 
     // Initialize the pointer.
     // $pointer = 7 * 5000 + 1;
     $pointer = $step * $chunk + 1;
-    drush_print($pointer);
+//    drush_print($pointer);
 
     $parameters = [
       'profile_id' => 'ga:' . $profile_id,
@@ -321,14 +321,14 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'start_index' => $pointer,
       'max_results' => $config->get('general_settings.chunk_to_fetch'),
     ];
-    drush_print_r($parameters);
+//    drush_print_r($parameters);
 
     $cache_options = [
       'cid' => 'google_analytics_counter_' . md5(serialize($parameters)),
       'expire' => self::cacheTime(),
       'refresh' => FALSE,
     ];
-    drush_print_r($cache_options);
+//    drush_print_r($cache_options);
 
     return $this->reportData($parameters, $cache_options);
   }
@@ -368,8 +368,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     $ga_feed->queryReportFeed($parameters, $cache_options);
 
     // DEBUG:
-     drush_print($ga_feed->results->selfLink);
-     drush_print($ga_feed->error);
+//     drush_print($ga_feed->results->selfLink);
+//     drush_print($ga_feed->error);
 
     // Handle errors here too.
     if (!empty($ga_feed->error)) {

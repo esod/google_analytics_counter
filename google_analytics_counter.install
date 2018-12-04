@@ -275,6 +275,7 @@ function google_analytics_counter_update_8009() {
     'length' => 20,
     'not null' => FALSE,
   ];
+  // Add the column.
   $schema->addField('google_analytics_counter', 'profile_id', $spec);
 
   if ($schema->fieldExists('google_analytics_counter_storage', 'profile_id')) {
@@ -286,7 +287,11 @@ function google_analytics_counter_update_8009() {
     'length' => 20,
     'not null' => FALSE,
   ];
+  // Add the column.
   $schema->addField('google_analytics_counter_storage', 'profile_id', $spec);
+  // Add the unique key.
+  $schema->addUniqueKey('google_analytics_counter_storage', 'profile_id', ['nid', 'profile_id']);
+
 }
 
 /**

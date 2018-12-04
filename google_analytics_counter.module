@@ -80,8 +80,11 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
 
       // Remove queued items.
       $database->delete('queue')
-        ->condition('name.value', 'google_analytics_counter_worker', 'LIKE')
-        ->condition('data.value', '%' . $profile_id . '%', 'LIKE')
+        ->condition('name', 'google_analytics_counter_worker')
+//        ->condition('data', '\'%' . $profile_id . '%\'', 'LIKE')
+//        ->condition('data', "'%" . $profile_id . "%'", 'LIKE')
+
+        //   $query->condition('brightcove.field_video_brightcove_url_uri', '%/www.mskcc.org%', 'LIKE');
         ->execute();
     }
 

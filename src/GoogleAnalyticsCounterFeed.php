@@ -594,7 +594,7 @@ class GoogleAnalyticsCounterFeed {
     $parameters['max-results'] = $params['max_results'];
 
     // DEBUG:
-    drush_print_r($parameters);
+//    drush_print_r($parameters);
 
 
     $this->setQueryPath('data/ga');

@@ -50,6 +50,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
    *   Google Analytics Counter Manager object.
    */
   public function __construct(ConfigFactoryInterface $config_factory, StateInterface $state, GoogleAnalyticsCounterManagerInterface $manager) {
+    parent::__construct($config_factory);
     $this->config = $config_factory->get('google_analytics_counter.settings');
     $this->state = $state;
     $this->manager = $manager;
@@ -200,13 +201,28 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
     ];
 
     $options = !empty($this->manager->getWebPropertiesOptions()) ? $this->manager->getWebPropertiesOptions() : ['unauthenticated' => 'Unauthenticated'];
+    $t_arg = [
+      ':href' => Url::fromRoute('google_analytics_counter.admin_dashboard_form', [], ['absolute' => TRUE])
+        ->toString(),
+      '@href' => 'dashboard',
+    ];
     $form['profile_id'] = [
       '#type' => 'select',
-      '#title' => $this->t("Google View"),
+      '#title' => $this->t("First Google View"),
       '#options' => $options,
       '#default_value' => $config->get('general_settings.profile_id'),
-      '#description' => $this->t("Choose a Google Analytics view. If you are not authenticated, 'Unauthenticated' is the only available option."),
+      '#description' => $this->t("Choose the first Google Analytics view to collect pageviews from. This is the view whose data will be shown on the <a href=:href>@href</a>. If you are not authenticated, 'Unauthenticated' is the only available option.", $t_arg),
       '#weight' => 15,
+    ];
+
+    $form['profile_ids'] = [
+      '#type' => 'select',
+      '#multiple' => TRUE,
+      '#title' => $this->t("Other Google Views"),
+      '#options' => $options,
+      '#default_value' => $config->get('general_settings.profile_ids'),
+      '#description' => $this->t("Choose other Google Analytics views. The road map for this module includes combining the First Google View with Other Google Views. If you are not authenticated, 'Unauthenticated' is the only available option."),
+      '#weight' => 16,
     ];
 
     return parent::buildForm($form, $form_state);
@@ -221,12 +237,6 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
     switch ($form_state->getValue('op')) {
       case (string) $this->t('Authenticate'):
         $this->manager->beginGacAuthentication();
-        if (!empty($config->get('general_settings.profile_id_prefill'))) {
-          \Drupal::configFactory()
-            ->getEditable('google_analytics_counter.settings')
-            ->set('general_settings.profile_id', $config->get('general_settings.profile_id_prefill'))
-            ->save();
-        }
         break;
 
       case (string) $this->t('Revoke authentication'):
@@ -234,12 +244,14 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
         break;
 
       default:
+        $profile_ids = $form_state->getValue('profile_ids');
         $config
           ->set('general_settings.client_id', $form_state->getValue('client_id'))
           ->set('general_settings.client_secret', $form_state->getValue('client_secret'))
           ->set('general_settings.redirect_uri', $form_state->getValue('redirect_uri'))
           ->set('general_settings.project_name', $form_state->getValue('project_name'))
           ->set('general_settings.profile_id', $form_state->getValue('profile_id'))
+          ->set('general_settings.profile_ids', array_combine($profile_ids, $profile_ids))
           ->save();
 
         parent::submitForm($form, $form_state);

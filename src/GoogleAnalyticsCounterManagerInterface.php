@@ -45,13 +45,15 @@ interface GoogleAnalyticsCounterManagerInterface {
   /**
    * Get the total results from Google.
    *
+   * @param string $profile_id
+   *   The profile id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch for the queue.
    *
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($index = 0);
+  public function getChunkedResults($profile_id, $index = 0)
 
   /**
    * Request report data.
@@ -126,6 +128,8 @@ interface GoogleAnalyticsCounterManagerInterface {
   /**
    * Update the path counts.
    *
+   * @param string $profile_id
+   *   The profile id used in the google query.
    * @param int $index
    *   The index of the chunk to fetch and update.
    *
@@ -133,7 +137,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    *
    * @throws \Exception
    */
-  public function updatePathCounts($index = 0);
+  public function updatePathCounts($profile_id, $index = 0);
 
   /**
    * Prepares to add the custom field and saves the configuration.

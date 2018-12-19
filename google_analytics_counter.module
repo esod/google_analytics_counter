@@ -8,6 +8,7 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\node\NodeInterface;
+use Drupal\google_analytics_counter\GoogleAnalyticsCounterHelper;
 
 /**
  * Implements hook_help().
@@ -25,7 +26,6 @@ function google_analytics_counter_help($route_name, RouteMatchInterface $route_m
  */
 function google_analytics_counter_cron() {
   $config = \Drupal::config('google_analytics_counter.settings');
-  $database = \Drupal::database();
 
   // $interval must be a value in seconds.
   $interval = 60 * $config->get('general_settings.cron_interval');
@@ -49,13 +49,43 @@ function google_analytics_counter_cron() {
     return;
   }
 
+  // Collect pageviews on the First Google View.
+  $profile_id = $config->get('general_settings.profile_id');
+  if (!$profile_id) {
+    return;
+  }
+  _google_analytics_counter_cron($profile_id);
+
+  // Collect pageviews on the Other Google Views.
+  $profile_ids = $config->get('general_settings.profile_ids');
+  if (!$profile_ids) {
+    return;
+  }
+
+  foreach ($profile_ids as $profile_id) {
+    _google_analytics_counter_cron($profile_id);
+  }
+}
+
+/**
+ *
+ */
+function _google_analytics_counter_cron($profile_id) {
+  _gac_cron_create_items($profile_id);
+
+}
+
+function _gac_cron_create_items($profile_id = '') {
+  $config = \Drupal::config('google_analytics_counter.settings');
+  $database = \Drupal::database();
+
   /* @var \Drupal\google_analytics_counter\GoogleAnalyticsCounterManagerInterface $manager */
   $manager = \Drupal::service('google_analytics_counter.manager');
   $queue = \Drupal::queue('google_analytics_counter_worker');
 
   try {
     // Fetch the first batch to see how many there are.
-    $results = $manager->getChunkedResults();
+    $results = $manager->getChunkedResults($profile_id);
 
     // Queue the chunks.
     $total = $results->results->totalResults;
@@ -87,6 +117,8 @@ function google_analytics_counter_cron() {
       ->alert('Cron experienced a problem: ' . $e->getMessage());
   }
 }
+
+
 
 /**
  * Implements hook_theme().

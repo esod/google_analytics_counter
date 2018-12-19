@@ -155,8 +155,12 @@ class GoogleAnalyticsCounterController extends ControllerBase {
     ];
 
     // If available, print dataLastRefreshed from Google.
-    $date_formatted = !empty($this->state->get('google_analytics_counter.data_last_refreshed')) ? $this->dateFormatter->format($this->state->get('google_analytics_counter.data_last_refreshed'), 'custom', 'M d, Y h:i:sa') : '';
-    $data_last_refreshed = !empty($this->state->get('google_analytics_counter.data_last_refreshed')) ? $date_formatted . ' is when Google last refreshed analytics data.' : "Google's last refreshed analytics data is currently unavailable.";
+    if ($this->state->get('google_analytics_counter.data_last_refreshed')) {
+      $data_last_refreshed = $this->dateFormatter->format($this->state->get('google_analytics_counter.data_last_refreshed'), 'custom', 'M d, Y h:i:sa'). $this->t(' is when Google last refreshed analytics data.');
+    }
+    else {
+      $data_last_refreshed = "Google's last refreshed analytics data is currently unavailable.";
+    }
     $t_arg = ['%data_last_refreshed' => $data_last_refreshed];
     $build['google_info']['data_last_refreshed'] = [
       '#type' => 'html_tag',

@@ -389,8 +389,9 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     }
 
     // The last time the Data was refreshed by Google. Not always available from Google.
-    $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
-
+    if (!empty($ga_feed->results->dataLastRefreshed)) {
+      $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
+    }
     // The first selfLink query to Google. Helpful for debugging in the dashboard.
     $this->state->set('google_analytics_counter.most_recent_query', $ga_feed->results->selfLink);
 

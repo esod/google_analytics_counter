@@ -296,7 +296,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($profile_id, $index = 0) {
+  public function getChunkedResults($multiple_id = '', $index = 0) {
     $config = $this->config;
 
     $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);

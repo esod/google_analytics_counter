@@ -57,25 +57,20 @@ function google_analytics_counter_cron() {
   _google_analytics_counter_cron($profile_id);
 
   // Collect pageviews on the Other Google Views.
-  $profile_ids = $config->get('general_settings.profile_ids');
-  if (!$profile_ids) {
+  $multiple_ids = $config->get('general_settings.$multiple_ids');
+  if (!$multiple_ids) {
     return;
   }
 
-  foreach ($profile_ids as $profile_id) {
-    _google_analytics_counter_cron($profile_id);
+  foreach ($multiple_ids as $multiple_id) {
+    _google_analytics_counter_cron($multiple_id);
   }
 }
 
 /**
  *
  */
-function _google_analytics_counter_cron($profile_id) {
-  _gac_cron_create_items($profile_id);
-
-}
-
-function _gac_cron_create_items($profile_id = '') {
+function _google_analytics_counter_cron($multiple_id = '') {
   $config = \Drupal::config('google_analytics_counter.settings');
   $database = \Drupal::database();
 
@@ -84,8 +79,13 @@ function _gac_cron_create_items($profile_id = '') {
   $queue = \Drupal::queue('google_analytics_counter_worker');
 
   try {
-    // Fetch the first batch to see how many there are.
-    $results = $manager->getChunkedResults($profile_id);
+    if (!$multiple_id) {
+      // Fetch the first batch to see how many there are.
+      $results = $manager->getChunkedResults();
+    }
+    else {
+      $results = $manager->getChunkedResults($multiple_id);
+    }
 
     // Queue the chunks.
     $total = $results->results->totalResults;

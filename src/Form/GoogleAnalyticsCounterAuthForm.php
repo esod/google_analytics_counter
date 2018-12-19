@@ -215,12 +215,12 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#weight' => 15,
     ];
 
-    $form['profile_ids'] = [
+    $form['multiple_ids'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => $this->t("Other Google Views"),
       '#options' => $options,
-      '#default_value' => $config->get('general_settings.profile_ids'),
+      '#default_value' => $config->get('general_settings.multiple_ids'),
       '#description' => $this->t("Choose other Google Analytics views. The road map for this module includes combining the First Google View with Other Google Views. If you are not authenticated, 'Unauthenticated' is the only available option."),
       '#weight' => 16,
     ];
@@ -244,19 +244,41 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
         break;
 
       default:
-        $profile_ids = $form_state->getValue('profile_ids');
+        $options = !empty($this->manager->getWebPropertiesOptions()) ? $this->manager->getWebPropertiesOptions() : ['unauthenticated' => 'Unauthenticated'];
+        $profile_id = $form_state->getValue('profile_id');
+        $profile_name = $this->searchArrayValueByKey($options, (int) $profile_id);
+
+        $multiple_ids = $form_state->getValue('multiple_ids');
         $config
           ->set('general_settings.client_id', $form_state->getValue('client_id'))
           ->set('general_settings.client_secret', $form_state->getValue('client_secret'))
           ->set('general_settings.redirect_uri', $form_state->getValue('redirect_uri'))
           ->set('general_settings.project_name', $form_state->getValue('project_name'))
           ->set('general_settings.profile_id', $form_state->getValue('profile_id'))
-          ->set('general_settings.profile_ids', array_combine($profile_ids, $profile_ids))
+          ->set('general_settings.profile_name', $profile_name)
+          ->set('general_settings.multiple_ids', array_combine($multiple_ids, $multiple_ids))
           ->save();
 
         parent::submitForm($form, $form_state);
         break;
     }
+  }
+
+  /**
+   * Search value by key in multidimensional array
+   * @param array $array
+   * @param $search
+   *
+   * @return bool|mixed
+   *
+   * @see https://snipplr.com/view/55684/
+   */
+  protected function searchArrayValueByKey(array $array, $search) {
+    foreach (new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array)) as $key => $value) {
+      if ($search === $key)
+        return $value;
+    }
+    return false;
   }
 
 }

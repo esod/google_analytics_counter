@@ -53,7 +53,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($profile_id, $index = 0)
+  public function getChunkedResults($multiple_id = '', $index = 0);
 
   /**
    * Request report data.
@@ -93,6 +93,16 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function displayGacCount($path);
 
   /**
+   * @param $nid
+   * @param $sum_of_pageviews
+   * @param $bundle
+   * @param $vid
+   *
+   * @throws \Exception
+   */
+  public function gacUpdateCustomField($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
+
+  /**
    * Get the row count of a table, sometimes with conditions.
    *
    * @param string $table
@@ -120,10 +130,12 @@ interface GoogleAnalyticsCounterManagerInterface {
    *   The content type of the node.
    * @param int $vid
    *   Revision id value.
+   * @param string $profile_id
+   *   The profile id used in the google query.
    *
    * @throws \Exception
    */
-  public function updateStorage($nid, $bundle, $vid);
+  public function updateStorage($nid, $bundle, $vid, $profile_id);
 
   /**
    * Update the path counts.

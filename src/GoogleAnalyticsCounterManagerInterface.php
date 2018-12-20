@@ -126,10 +126,12 @@ interface GoogleAnalyticsCounterManagerInterface {
    *
    * @param string $table
    *   The table from which the results are selected.
+   * @param string $profile_id
+   *   The profile id that has been read.
    *
    * @return mixed
    */
-  public function getTopTwentyResults($table);
+  public function getTopTwentyResults($table, $profile_id);
 
   /**
    * Save the pageview count for a given node.

@@ -135,11 +135,11 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '</li><ul><li>' . $this->t('Information on the <a href=:href>@href</a> page is derived from', $t_arg) .  '<strong>' . $this->t(' First Google View, ') . '</strong>' . $this->t('not the') .  '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t('field.') .
       '</li><li>' . $this->t('After cron runs, check pageviews for all selected Google Views on the <a href=:href>@href</a>  page in the Top Twenty Results section. <em>Todo: says two different things</em>', $t_arg) .
       '</li></ul></ol></p>' :
-      '<ol><li>' . $this->t('Fill in your Client ID, Client Secret, Authorized Redirect URI, and Google Project Name.') .
+      '<ol><li>' . $this->t('Fill in your Client ID, Client Secret, Authorized Redirect URI, and, optionally, Google Project Name.') .
       '</li><li>' . $this->t('Click Save configuration.') .
       '</li><li>' . $this->t('Click Authenticate in Authenticate with Google Analytics above.') .
       '</li><ul><li>' .  $this->t('If you don\'t already have Google Analytics set up in Google, follow the instructions in the README.md included with this module.') .
-      '</li><li>' .  $this->t('After setting up a Google Analytics project, come back to this page and click the Authenticate button which will be visible above after clicking Save configuration.') .
+      '</li><li>' .  $this->t('After setting up a Google Analytics project, come back to this page and click the Authenticate button which will be visible above after saving your Client ID, Client Secret, Authorized Redirect URI, and, optionally, Google Project Name.') .
       '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select the') . '<strong>' . $this->t(' First Google View ') . '</strong>' . $this->t('to collect analytics from and select') . '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t('from which to collect analytics.') .
       '</li><li>' . $this->t('Click Save configuration.') .
       '</li><li>' .  $this->t('If you are not authenticated,') . '<strong>' . $this->t(' Unauthenticated ') . '</strong>' . $this->t('is the only available option for ') .  '<strong>' . $this->t('First Google View') . '</strong> or  <strong>' . $this->t('Additional Google Views') . '</strong>.</li></ol>';

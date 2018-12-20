@@ -114,45 +114,83 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => TRUE,
     ];
 
-    // Get and format total pageviews.
-    $t_args = $this->getStartDateEndDate();
-    $t_args += ['%total_pageviews' => number_format($this->state->get('google_analytics_counter.total_pageviews'))];
-    $build['google_info']['total_pageviews'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('%total_pageviews pageviews were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+    // Add profile_id to the $profile_ids array.
+    $profile_id = $config->get('general_settings.profile_id');
+    $profile_id = [
+      $profile_id => $profile_id,
     ];
 
-    // Get and format total paths.
-    $t_args = $this->getStartDateEndDate();
-    $t_args += [
-      '%total_paths' => number_format($this->state->get('google_analytics_counter.total_paths')),
-    ];
-    $build['google_info']['total_paths'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('%total_paths paths were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
-    ];
+    // Combine profile_id and profile_ids.
+    $profile_ids = $config->get('general_settings.profile_ids');
+    $profile_ids = $profile_id + $profile_ids;
 
-    // Get the most recent query or print helpful message for site builders.
-    if (!$this->state->get('google_analytics_counter.most_recent_query')) {
-      $t_args = ['%most_recent_query' => 'No query has been run yet or Google is not running queries from your system. See the module\'s README.md or Google\'s documentation.'];
+    if ($profile_ids) {
+      $t_args = $this->getStartDateEndDate();
+      $t_args += ['%total_pageviews' => number_format($this->state->get('google_analytics_counter.total_pageviews'))];
+      $t_arg = '';
+      foreach ($profile_ids as $profile_id) {
+        $build['google_info']['profile_name_' . $profile_id] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->manager->getProfileName($profile_id),
+        ];
+
+        // Get and format total pageviews.
+        if (!empty($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id))) {
+          $total_pageviews = number_format(key($this->state->get('google_analytics_counter.total_pageviews_' . $profile_id)));
+        }
+        else {
+          $total_pageviews = 0;
+        }
+        $t_args += ['%total_pageviews' => $total_pageviews];
+        $build['google_info']['total_pageviews_' . $profile_id] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->t('%total_pageviews pageviews were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+        ];
+
+        // Get and format total paths.
+        $t_args = $this->getStartDateEndDate();
+        $t_args += ['%total_paths' => number_format($this->state->get('google_analytics_counter.total_paths_' . $profile_id))];
+        $build['google_info']['total_paths_' . $profile_id] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->t('%total_paths paths were recorded by Google Analytics for this view between %start_date - %end_date.', $t_args),
+        ];
+
+        // Get the most recent query or print helpful message for site builders.
+        if (!$this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)) {
+          $t_arg = ['%most_recent_query' => "No query has been run yet or Google is not running queries from your system. See the module's README.md or Google's documentation."];
+        }
+        else {
+          $t_arg = ['%most_recent_query' => $this->state->get('google_analytics_counter.most_recent_query_' . $profile_id)];
+        }
+      }
+
+      $build['google_info']['google_query'] = [
+        '#type' => 'details',
+        '#title' => $this->t('Recent query to Google'),
+        '#open' => FALSE,
+      ];
+
+      $build['google_info']['google_query']['most_recent_query'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('%most_recent_query', $t_arg) . '<br /><br />' . $this->t('The access_token needs to be included with the query. Get the access_token with <em>drush state-get google_analytics_counter.access_token</em>'),
+      ];
     }
     else {
-      $t_args = ['%most_recent_query' => $this->state->get('google_analytics_counter.most_recent_query')];
+      $t_args = [
+        ':href' => Url::fromRoute('google_analytics_counter.admin_auth_form', [], ['absolute' => TRUE])
+          ->toString(),
+        '@href' => 'Google View',
+      ];
+      $build['google_info']['in_case'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('Add at least one <a href=:href>@href</a> to see information about pageviews and paths.', $t_args),
+      ];
     }
-
-    $build['google_info']['google_query'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Recent query to Google'),
-      '#open' => FALSE,
-    ];
-
-    $build['google_info']['google_query']['most_recent_query'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('%most_recent_query', $t_args) . '<br /><br />' . $this->t('The access_token needs to be included with the query. Get the access_token with <em>drush state-get google_analytics_counter.access_token</em>'),
-    ];
 
     // If available, print dataLastRefreshed from Google.
     if ($this->state->get('google_analytics_counter.data_last_refreshed')) {
@@ -232,59 +270,62 @@ class GoogleAnalyticsCounterController extends ControllerBase {
       '#open' => FALSE,
     ];
 
-    // Top Twenty Results for Google Analytics Counter table.
-    $build['drupal_info']['top_twenty_results']['counter'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Pagepaths'),
-      '#open' => FALSE,
-      '#attributes' => [
-        'class' => ['google-analytics-counter-counter'],
-      ],
-    ];
+    foreach ($profile_ids as $profile_id) {
+      // Top Twenty Results for Google Analytics Counter table.
+      $build['drupal_info']['top_twenty_results']['counter_' . $profile_id] = [
+        '#type' => 'details',
+        '#title' => $this->t('Pagepaths for ') . $this->manager->getProfileName($profile_id),
+        '#open' => FALSE,
+        '#attributes' => [
+          'class' => ['google-analytics-counter-counter'],
+        ],
+      ];
 
-    $build['drupal_info']['top_twenty_results']['counter']['summary'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t("A pagepath can include paths that don't have an NID, like /search."),
-    ];
+      $build['drupal_info']['top_twenty_results']['counter_' . $profile_id]['summary'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t("A pagepath can include paths that don't have an NID, like /search."),
+      ];
 
-    $rows = $this->manager->getTopTwentyResults('google_analytics_counter');
-    // Display table.
-    $build['drupal_info']['top_twenty_results']['counter']['table'] = [
-      '#type' => 'table',
-      '#header' => [
-        $this->t('Pagepath'),
-        $this->t('Pageviews'),
-      ],
-      '#rows' => $rows,
-    ];
+      // Display table for google_analytics_counter.
+      $rows = $this->manager->getTopTwentyResults('google_analytics_counter', $profile_id);
+      // Display table.
+      $build['drupal_info']['top_twenty_results']['counter_' . $profile_id]['table'] = [
+        '#type' => 'table',
+        '#header' => [
+          $this->t('Pagepath'),
+          $this->t('Pageviews'),
+        ],
+        '#rows' => $rows,
+      ];
 
-    // Top Twenty Results for Google Analytics Counter Storage table.
-    $build['drupal_info']['top_twenty_results']['storage'] = [
-      '#type' => 'details',
-      '#title' => $this->t('Pageview Totals'),
-      '#open' => FALSE,
-      '#attributes' => [
-        'class' => ['google-analytics-counter-storage'],
-      ],
-    ];
+      // Top Twenty Results for Google Analytics Counter Storage table.
+      $build['drupal_info']['top_twenty_results']['storage_' . $profile_id] = [
+        '#type' => 'details',
+        '#title' => $this->t('Pageview Totals for ') . $this->manager->getProfileName($profile_id),
+        '#open' => FALSE,
+        '#attributes' => [
+          'class' => ['google-analytics-counter-storage'],
+        ],
+      ];
 
-    $build['drupal_info']['top_twenty_results']['storage']['summary'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'p',
-      '#value' => $this->t('A pageview total may be greater than PAGEVIEWS because a pageview total includes page aliases, node/id, and node/id/ URIs.'),
-    ];
+      $build['drupal_info']['top_twenty_results']['storage_' . $profile_id]['summary'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('A pageview total may be greater than PAGEVIEWS because a pageview total includes page aliases, node/id, and node/id/ URIs.'),
+      ];
 
-    $rows = $this->manager->getTopTwentyResults('google_analytics_counter_storage');
-    // Display table.
-    $build['drupal_info']['top_twenty_results']['storage']['table'] = [
-      '#type' => 'table',
-      '#header' => [
-        $this->t('Nid'),
-        $this->t('Pageview Total'),
-      ],
-      '#rows' => $rows,
-    ];
+      // Display table for google_analytics_counter_storage.
+      $rows = $this->manager->getTopTwentyResults('google_analytics_counter_storage', $profile_id);
+      $build['drupal_info']['top_twenty_results']['storage_' . $profile_id]['table'] = [
+        '#type' => 'table',
+        '#header' => [
+          $this->t('Nid'),
+          $this->t('Pageview Total'),
+        ],
+        '#rows' => $rows,
+      ];
+    }
 
     // Cron Information.
     $build['cron_information'] = [

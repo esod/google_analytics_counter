@@ -554,7 +554,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @throws \Exception
    */
   public function gacUpdateCustomField($nid, $sum_of_pageviews, $profile_id, $bundle, $vid) {
-    // Todo: This can be more performant by adding only the bundles that have been selected.
+    // Todo: This can be faster by adding only the bundles that have been selected.
     $query = $this->connection->select('node__field_google_analytics_counter', 'gac');
     $query->fields('gac');
     $query->condition('entity_id', $nid);
@@ -632,16 +632,19 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    *
    * @param string $table
    *   The table from which the results are selected.
+   * @param string $profile_id
+   *   The profile id that has been read.
    *
    * @return mixed
    */
-  public function getTopTwentyResults($table) {
+  public function getTopTwentyResults($table, $profile_id) {
     $query = $this->connection->select($table, 't');
     $query->range(0, 20);
     $rows = [];
     switch ($table) {
       case 'google_analytics_counter':
         $query->fields('t', ['pagepath', 'pageviews']);
+        $query->condition('profile_id', $profile_id);
         $query->orderBy('pageviews', 'DESC');
         $result = $query->execute()->fetchAll();
         $rows = [];
@@ -654,6 +657,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         break;
       case 'google_analytics_counter_storage':
         $query->fields('t', ['nid', 'pageview_total']);
+        $query->condition('profile_id', $profile_id);
         $query->orderBy('pageview_total', 'DESC');
         $result = $query->execute()->fetchAll();
         foreach ($result as $value) {
@@ -967,7 +971,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       $profile_name = '<strong>' . $profile_id[key($profile_id)] . '</strong>';
     }
     else {
-      $profile_name = '<strong>' . $this->t('Profile name is available after cron runs.') . '</strong>';
+      $profile_name = '<strong>' . $this->t('(Profile name to come)') . '</strong>';
     }
     return $profile_name;
   }

@@ -61,7 +61,7 @@ function google_analytics_counter_cron() {
     return;
   }
 
-  // Convert profile_id to an array.
+  // Add profile_id to the $profile_ids array.
   $profile_id = $config->get('general_settings.profile_id');
   $profile_id = [
     $profile_id => $profile_id,

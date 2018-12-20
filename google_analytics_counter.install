@@ -133,7 +133,7 @@ function google_analytics_counter_schema() {
  * Implements hook_install().
  */
 function google_analytics_counter_install() {
-  GoogleAnalyticsCounterHelper::gacSaveGacTypeConfig();
+  GoogleAnalyticsCounterHelper::gacSaveTypeConfig();
 }
 
 /**
@@ -254,7 +254,7 @@ function google_analytics_counter_update_8007() {
  * Issue #3020811: Move Configure types form into its own tab.
  */
 function google_analytics_counter_update_8008() {
-  GoogleAnalyticsCounterHelper::gacSaveGacTypeConfig();
+  GoogleAnalyticsCounterHelper::gacSaveTypeConfig();
 }
 
 /**
@@ -325,23 +325,24 @@ function google_analytics_counter_update_8011() {
   }
 }
 
-/**
- * Issue #3003875: Migrates profile_id to profile_ids.
- */
-function google_analytics_counter_update_8012() {
-  $config_factory = \Drupal::configFactory();
-  $config = \Drupal::config('google_analytics_counter.settings');
-
-  // Set profile_ids with profile_id.
-  $profile_id = $config->get('general_settings.profile_id');
-  $profile_id = [$profile_id => $profile_id];
-
-  $config_factory->getEditable('google_analytics_counter.settings')
-    ->set('general_settings.profile_ids', array_combine($profile_id, $profile_id))
-    ->save();
-
-  // Clear profile_id.
-  $config_factory->getEditable('google_analytics_counter.settings')
-    ->clear('general_settings.profile_id')
-    ->save();
-}
+///**
+// * Issue #3003875: Migrates profile_id to profile_ids.
+// */
+//function google_analytics_counter_update_8012() {
+//  $config_factory = \Drupal::configFactory();
+//  $config = \Drupal::config('google_analytics_counter.settings');
+//
+//  // Set profile_ids with profile_id.
+//  $profile_id = $config->get('general_settings.profile_id');
+//  $profile_id = [$profile_id => $profile_id];
+//
+//  // Migrates profile_id to profile_ids.
+//  $config_factory->getEditable('google_analytics_counter.settings')
+//    ->set('general_settings.profile_ids', array_combine($profile_id, $profile_id))
+//    ->save();
+//
+//  // Clear profile_id.
+//  $config_factory->getEditable('google_analytics_counter.settings')
+//    ->clear('general_settings.profile_id')
+//    ->save();
+//}

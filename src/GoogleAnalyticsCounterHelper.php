@@ -34,7 +34,7 @@ class GoogleAnalyticsCounterHelper extends EditorialContentEntityBase {
   /**
    * Creates the gac_type_{content_type} configuration on installation or update.
    */
-  public static function gacSaveGacTypeConfig() {
+  public static function gacSaveTypeConfig() {
     $config_factory = \Drupal::configFactory();
     $content_types = \Drupal::service('entity.manager')
       ->getStorage('node_type')

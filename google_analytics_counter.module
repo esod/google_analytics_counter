@@ -72,6 +72,7 @@ function google_analytics_counter_cron() {
   $profile_ids = $profile_id + $profile_ids;
 
   // Store $profiles_ids here since they may have been changed.
+  // Todo: $profile_ids are in configuration. Why also here?
   \Drupal::state()->set('google_analytics_counter.profile_ids', $profile_ids);
 
   // Query Google and get results for one or more profile_ids.
@@ -79,7 +80,7 @@ function google_analytics_counter_cron() {
 }
 
 /**
- * Create queue items that include profile_id.
+ * Create queue items which include the profile_id.
  *
  * @param array $profile_ids
  *   The profile id used for google query.
@@ -96,7 +97,7 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
       // Fetch the first batch to see how many there are.
       $results = $manager->getChunkedResults($profile_id);
 
-      // Queue the chunks.
+      // Create queue fetch items from the total results divided into chunks.
       $total = $results->results->totalResults;
       for ($index = 0; $index < $total / $config->get('general_settings.chunk_to_fetch'); $index++) {
         // Add a queue item to fetch for all chunks.

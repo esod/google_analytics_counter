@@ -101,8 +101,6 @@ interface GoogleAnalyticsCounterManagerInterface {
    *   The node ID that has been read.
    * @param $sum_of_pageviews
    *   Count of pageviews via the hash of the paths.
-   * @param $profile_id
-   *   The profile id of Google View
    * @param $bundle
    *   The drupal content type
    * @param $vid
@@ -110,7 +108,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    *
    * @throws \Exception
    */
-  public function gacUpdateCustomField($nid, $sum_of_pageviews, $profile_id, $bundle, $vid);
+  public function gacUpdateCustomField($nid, $sum_of_pageviews, $bundle, $vid);
 
   /**
    * Get the row count of a table, sometimes with conditions.
@@ -161,7 +159,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    *
    * @throws \Exception
    */
-  public function updatePathCounts($profile_id, $index = 0);
+  public function gacUpdatePathCounts($profile_id, $index = 0);
 
   /**
    * Prepares to add the custom field and saves the configuration.

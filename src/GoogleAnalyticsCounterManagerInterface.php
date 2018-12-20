@@ -53,7 +53,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($profile_id = '', $multiple_id = '', $index = 0);
+  public function getChunkedResults($profile_id, $index = 0);
 
   /**
    * Request report data.
@@ -86,17 +86,27 @@ interface GoogleAnalyticsCounterManagerInterface {
    *
    * @param string $path
    *   The path to look up.
+   * @param $profile_id
+   *   The current profile_id.
    *
    * @return string
    *   Count of page views.
    */
-  public function gacDisplayCount($path, $profile);
+  public function gacDisplayCount($path, $profile_id);
 
   /**
+   * Update the Google Analytics Counter custom field with profile_id pageviews.
+   *
    * @param $nid
+   *   The node ID that has been read.
    * @param $sum_of_pageviews
+   *   Count of pageviews via the hash of the paths.
+   * @param $profile_id
+   *   The profile id of Google View
    * @param $bundle
+   *   The drupal content type
    * @param $vid
+   *   The revision ID of the node that has been read
    *
    * @throws \Exception
    */
@@ -135,7 +145,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    *
    * @throws \Exception
    */
-  public function updateStorage($nid, $bundle, $vid, $profile_id);
+  public function gacUpdateStorage($nid, $bundle, $vid, $profile_id);
 
   /**
    * Update the path counts.
@@ -240,7 +250,15 @@ interface GoogleAnalyticsCounterManagerInterface {
   public function getProfileName($profile_id);
 
   /**
-   * Delete states.
+   * Delete stored state values.
    */
   public function gacDeleteState();
+
+  /**
+   * Delete stored state values with profile ids.
+   *
+   * @param string $profile_id
+   *   The profile id used in the google query.
+   */
+  public function gacDeleteStateWithId($profile_id);
 }

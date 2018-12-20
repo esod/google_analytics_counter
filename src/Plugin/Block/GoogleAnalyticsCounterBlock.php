@@ -72,7 +72,7 @@ class GoogleAnalyticsCounterBlock extends BlockBase implements ContainerFactoryP
    */
   public function build() {
     $config = \Drupal::config('google_analytics_counter.settings');
-    // Todo: Generate a block for profile_id and each multiple_id.
+    // Todo: Generate a block for profile_id and profile_ids.
     $profile_id = $config->get('general_settings.profile_id');
 
     return [

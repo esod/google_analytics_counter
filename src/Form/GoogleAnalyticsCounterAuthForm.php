@@ -129,19 +129,20 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '@href' => 'Dashboard',
     ];
     $markup_description = ($this->manager->isAuthenticated() === TRUE) ? '<p>' . $this->t('Client ID, Client Secret, and Authorized redirect URI can only be changed when not authenticated.') .
-      '<ol><li>' . $this->t('Now that you are authenticated with Google Analytics, select the') .  '<strong>' . $this->t(' Google Views ') . '</strong>' . $this->t('to collect analytics from and click Save configuration.') .
-      '</li><li>' . $this->t('Save configuration.') .
-      '</li><li>' . $this->t('On the next cron job, analytics from the Google View field and the Additional Google Views field will be saved to Drupal.') .
-      '</li><ul><li>' . $this->t('Information on the <a href=:href>@href</a> page is derived from the Google View field, not the Additional Google Views field.', $t_arg) .
-      '</li><li>' . $this->t('After cron runs, check pageviews for all selected Google Views on the <a href=:href>@href</a>  page in the Top Twenty Results section.', $t_arg) .
+      '<ol><li>' . $this->t('Now that you are authenticated, select the') .  '<strong>' . $this->t(' First Google View ') . '</strong>' . $this->t('and any') .  '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t('to collect analytics from.') .
+      '</li><li>' . $this->t('Click Save configuration.') .
+      '</li><li>' . $this->t('On the next cron job, analytics from the') .  '<strong>' . $this->t(' First Google View ') . '</strong>' . $this->t('and any') .  '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t(' will be saved to Drupal.') .
+      '</li><ul><li>' . $this->t('Information on the <a href=:href>@href</a> page is derived from', $t_arg) .  '<strong>' . $this->t(' First Google View, ') . '</strong>' . $this->t('not the') .  '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t('field.') .
+      '</li><li>' . $this->t('After cron runs, check pageviews for all selected Google Views on the <a href=:href>@href</a>  page in the Top Twenty Results section. <em>Todo: says two different things</em>', $t_arg) .
       '</li></ul></ol></p>' :
       '<ol><li>' . $this->t('Fill in your Client ID, Client Secret, Authorized Redirect URI, and Google Project Name.') .
-      '</li><li>' . $this->t('Save configuration.') .
+      '</li><li>' . $this->t('Click Save configuration.') .
       '</li><li>' . $this->t('Click Authenticate in Authenticate with Google Analytics above.') .
       '</li><ul><li>' .  $this->t('If you don\'t already have Google Analytics set up in Google, follow the instructions in the README.md included with this module.') .
-      '</li><li>' .  $this->t('After setting up Google Analytics, come back to this page and click the Authenticate button above.') .
-      '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select the') . '<strong>' . $this->t(' Google View ') . '</strong>' . $this->t('to collect analytics from and click Save configuration.') .
-      '</li><ul><li>' .  $this->t('If you are not authenticated,') . '<strong>' . $this->t(' Unauthenticated ') . '</strong>' . $this->t('is the only available option for ') .  '<strong>' . $this->t('Google View') . '</strong>.</li></ul></ol>';
+      '</li><li>' .  $this->t('After setting up a Google Analytics project, come back to this page and click the Authenticate button which will be visible above after clicking Save configuration.') .
+      '</li></ul><li>' . $this->t('After authenticating with Google Analytics, select the') . '<strong>' . $this->t(' First Google View ') . '</strong>' . $this->t('to collect analytics from and select') . '<strong>' . $this->t(' Additional Google Views ') . '</strong>' . $this->t('from which to collect analytics.') .
+      '</li><li>' . $this->t('Click Save configuration.') .
+      '</li><li>' .  $this->t('If you are not authenticated,') . '<strong>' . $this->t(' Unauthenticated ') . '</strong>' . $this->t('is the only available option for ') .  '<strong>' . $this->t('First Google View') . '</strong> or  <strong>' . $this->t('Additional Google Views') . '</strong>.</li></ol>';
 
     $form['setup'] = [
       '#type' => 'markup',
@@ -215,12 +216,12 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
       '#weight' => 15,
     ];
 
-    $form['multiple_ids'] = [
+    $form['profile_ids'] = [
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => $this->t("Other Google Views"),
       '#options' => $options,
-      '#default_value' => $config->get('general_settings.multiple_ids'),
+      '#default_value' => $config->get('general_settings.profile_ids'),
       '#description' => $this->t("Choose other Google Analytics views. The road map for this module includes combining the First Google View with Other Google Views. If you are not authenticated, 'Unauthenticated' is the only available option."),
       '#weight' => 16,
     ];
@@ -248,7 +249,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
         $profile_id = $form_state->getValue('profile_id');
         $profile_name = $this->searchArrayValueByKey($options, (int) $profile_id);
 
-        $multiple_ids = $form_state->getValue('multiple_ids');
+        $profile_ids = $form_state->getValue('profile_ids');
         $config
           ->set('general_settings.client_id', $form_state->getValue('client_id'))
           ->set('general_settings.client_secret', $form_state->getValue('client_secret'))
@@ -256,7 +257,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
           ->set('general_settings.project_name', $form_state->getValue('project_name'))
           ->set('general_settings.profile_id', $form_state->getValue('profile_id'))
           ->set('general_settings.profile_name', $profile_name)
-          ->set('general_settings.multiple_ids', array_combine($multiple_ids, $multiple_ids))
+          ->set('general_settings.profile_ids', array_combine($profile_ids, $profile_ids))
           ->save();
 
         parent::submitForm($form, $form_state);
@@ -266,6 +267,7 @@ class GoogleAnalyticsCounterAuthForm extends ConfigFormBase {
 
   /**
    * Search value by key in multidimensional array
+   *
    * @param array $array
    * @param $search
    *

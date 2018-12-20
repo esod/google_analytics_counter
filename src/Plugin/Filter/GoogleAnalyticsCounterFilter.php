@@ -144,7 +144,7 @@ class GoogleAnalyticsCounterFilter extends FilterBase implements ContainerFactor
       // [gac|path/to/page] displays the pages views for path/to/page.
 
       $config = \Drupal::config('google_analytics_counter.settings');
-      // Todo: Allow the filter to use profile_id or multiple_ids.
+      // Todo: Allow the filter to use profile_id or profile_ids.
       $profile_id = $config->get('general_settings.profile_id');
 
       switch ($match) {

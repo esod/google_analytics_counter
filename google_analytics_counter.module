@@ -26,13 +26,21 @@ function google_analytics_counter_help($route_name, RouteMatchInterface $route_m
  */
 function google_analytics_counter_cron() {
   $config = \Drupal::config('google_analytics_counter.settings');
-
-  // $interval must be a value in seconds.
-  $interval = 60 * $config->get('general_settings.cron_interval');
+  $database = \Drupal::database();
 
   // Important to set it before the job because if they take long
   // and there is another cron triggered...
   \Drupal::state()->set('google_analytics_counter.cron_next_execution', \Drupal::time()->getRequestTime());
+
+  // Set the total number of published nodes.
+  $query = $database->select('node_field_data', 'nfd');
+  $query->fields('nfd', ['nid']);
+  $query->condition('status', NodeInterface::PUBLISHED);
+  $total_nodes = $query->countQuery()->execute()->fetchField();
+  \Drupal::state()->set('google_analytics_counter.total_nodes', $total_nodes);
+
+  // $interval must be a value in seconds.
+  $interval = 60 * $config->get('general_settings.cron_interval');
 
   // On some systems, cron could be every minute. Throttle updating with the
   // cron_interval on the settings form.
@@ -57,7 +65,7 @@ function google_analytics_counter_cron() {
   _google_analytics_counter_cron($profile_id);
 
   // Collect pageviews on the Other Google Views.
-  $multiple_ids = $config->get('general_settings.$multiple_ids');
+  $multiple_ids = $config->get('general_settings.multiple_ids');
   if (!$multiple_ids) {
     return;
   }

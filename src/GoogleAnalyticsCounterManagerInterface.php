@@ -53,7 +53,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($multiple_id = '', $index = 0);
+  public function getChunkedResults($profile_id = '', $multiple_id = '', $index = 0);
 
   /**
    * Request report data.
@@ -90,7 +90,7 @@ interface GoogleAnalyticsCounterManagerInterface {
    * @return string
    *   Count of page views.
    */
-  public function displayGacCount($path);
+  public function gacDisplayCount($path, $profile);
 
   /**
    * @param $nid

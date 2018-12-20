@@ -302,24 +302,30 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     if ($profile_id) {
       $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
       $chunk = $config->get("general_settings.chunk_to_fetch_$profile_id");
+
       // Set the pointer.
       $pointer = $step * $chunk + 1;
 
-      $parameters = $this->gacGetParameters($profile_id, $config, $pointer);
+      // Sets the parameters array for the google query.
+      $parameters = $this->gacSetParameters($profile_id, $pointer);
 
-      $cache_options = $this->gacGetCacheOptions($parameters);
+      // Sets the cache options for the parameters array.
+      $cache_options = $this->gacSetCacheOptions($parameters);
 
       return $this->reportData($parameters, $cache_options);
     }
     else {
       $step = $this->state->get('google_analytics_counter.data_step_' . $multiple_id);
       $chunk = $config->get("general_settings.chunk_to_fetch_$multiple_id");
+
       // Set the pointer.
       $pointer = $step * $chunk + 1;
 
-      $parameters = $this->gacGetParameters($multiple_id, $config, $pointer);
+      // Sets the parameters array for the google query.
+      $parameters = $this->gacSetParameters($multiple_id, $pointer);
 
-      $cache_options = $this->gacGetCacheOptions($parameters);
+      // Sets the cache options for the parameters array.
+      $cache_options = $this->gacSetCacheOptions($parameters);
 
       return $this->reportData($parameters, $cache_options);
     }
@@ -384,28 +390,31 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       }
     }
 
-    // Trim 'ga:' from the profile for cleaner storage.
-    $profile_id = substr($parameters['profile_id'], 3);
+    // The following list of states is used on the dashboard and for the profile_id only.
+    if($parameters['profile_id'] == $config->get('general_settings.profile_id')) {
+      // Trim 'ga:' from the profile for cleaner storage.
+      $profile_id = substr($parameters['profile_id'], 3);
 
-    // The last time the Data was refreshed by Google. Not always available from Google.
-    if (!empty($ga_feed->results->dataLastRefreshed)) {
-      $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
+      // The last time the Data was refreshed by Google. Not always available from Google.
+      if (!empty($ga_feed->results->dataLastRefreshed)) {
+        $this->state->set('google_analytics_counter.data_last_refreshed', $ga_feed->results->dataLastRefreshed);
+      }
+
+      // The first selfLink query to Google. Helpful for debugging in the dashboard.
+      $this->state->set('google_analytics_counter.most_recent_query_' . $profile_id, $ga_feed->results->selfLink);
+
+      // The total number of pageViews and the profile name for the profile(s) from start_date to end_date.
+      $this->state->set('google_analytics_counter.total_pageviews_' . $profile_id, [$ga_feed->results->totalsForAllResults['pageviews'] => $ga_feed->results->profileInfo->profileName]);
+
+      // The total number of pagePaths for this profile from start_date to end_date.
+      $this->state->set('google_analytics_counter.total_paths_' . $profile_id, $ga_feed->results->totalResults);
     }
-
-    // The first selfLink query to Google. Helpful for debugging in the dashboard.
-    $this->state->set('google_analytics_counter.most_recent_query_' . $profile_id, $ga_feed->results->selfLink);
-
-    // The total number of pageViews and the profile name for the profile(s) from start_date to end_date.
-    $this->state->set('google_analytics_counter.total_pageviews_' . $profile_id, [$ga_feed->results->totalsForAllResults['pageviews'] => $ga_feed->results->profileInfo->profileName]);
-
-    // The total number of pagePaths for this profile from start_date to end_date.
-    $this->state->set('google_analytics_counter.total_paths_' . $profile_id, $ga_feed->results->totalResults);
 
     // The number of results from Google Analytics in one request.
     $chunk = $config->get('general_settings.chunk_to_fetch');
 
     // Do one chunk at a time and register the data step.
-    $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
+    $step = $this->state->get('google_analytics_counter.data_step_' . $parameters['profile_id']);
 
     // Which node to look for first. Must be between 1 - infinity.
     $pointer = $step * $chunk + 1;
@@ -429,7 +438,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       $new_step = 0;
     }
 
-    $this->state->set('google_analytics_counter.data_step_' . $profile_id, $new_step);
+    $this->state->set('google_analytics_counter.data_step_' . $parameters['profile_id'], $new_step);
 
     return $ga_feed;
   }
@@ -443,14 +452,14 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return string
    *   Count of page views.
    */
-  public function displayGacCount($path) {
+  public function gacDisplayCount($path, $profile) {
     // Make sure the path starts with a slash.
     $path = '/' . trim($path, ' /');
 
     // It's the front page.
     if ($this->pathMatcher->isFrontPage()) {
       $aliases = ['/'];
-      $sum_of_pageviews = $this->sumPageviews($aliases);
+      $sum_of_pageviews = $this->sumPageviews($aliases, $profile);
     }
     else {
       // Look up the alias, with, and without trailing slash.
@@ -460,7 +469,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         $path . '/',
       ];
 
-      $sum_of_pageviews = $this->sumPageviews($aliases);
+      $sum_of_pageviews = $this->sumPageviews($aliases, $profile);
     }
 
     return number_format($sum_of_pageviews);
@@ -987,13 +996,18 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   }
 
   /**
-   * @param $profile_id
-   * @param $config
+   * Sets the parameters array for the google query.
+   *
+   * @param string $id
+   *   Either a profile id for the dashboard and the custom field or a multiple id.
    * @param $pointer
+   *   The step multiplied by the chunk plus one.
    *
    * @return array
    */
-  protected function gacGetParameters($id, $config, $pointer) {
+  protected function gacSetParameters($id, $pointer) {
+    $config = $this->config;
+
     $parameters = [
       'profile_id' => 'ga:' . $id,
       'metrics' => ['ga:pageviews'],
@@ -1009,11 +1023,13 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   }
 
   /**
+   * Sets the cache options for the parameters array.
+   *
    * @param array $parameters
    *
    * @return array
    */
-  protected function gacGetCacheOptions(array $parameters) {
+  protected function gacSetCacheOptions(array $parameters) {
     $cache_options = [
       'cid' => 'google_analytics_counter_' . md5(serialize($parameters)),
       'expire' => self::cacheTime(),

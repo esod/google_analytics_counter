@@ -71,9 +71,13 @@ class GoogleAnalyticsCounterBlock extends BlockBase implements ContainerFactoryP
    * {@inheritdoc}
    */
   public function build() {
+    $config = \Drupal::config('google_analytics_counter.settings');
+    // Todo: Generate a block for profile_id and each multiple_id.
+    $profile_id = $config->get('general_settings.profile_id');
+
     return [
       '#theme' => 'google_analytics_counter',
-      '#pageviews' => $this->manager->displayGacCount($this->currentPath->getPath()),
+      '#pageviews' => $this->manager->gacDisplayCount($this->currentPath->getPath(), $profile_id),
     ];
   }
 

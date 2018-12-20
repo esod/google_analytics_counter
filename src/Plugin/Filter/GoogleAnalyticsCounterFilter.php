@@ -142,9 +142,14 @@ class GoogleAnalyticsCounterFilter extends FilterBase implements ContainerFactor
       // [gac|node/1234] displays the page views for node/1234.
       //
       // [gac|path/to/page] displays the pages views for path/to/page.
+
+      $config = \Drupal::config('google_analytics_counter.settings');
+      // Todo: Allow the filter to use profile_id or multiple_ids.
+      $profile_id = $config->get('general_settings.profile_id');
+
       switch ($match) {
         case '[gac]':
-          $matchlink[] = $this->manager->displayGacCount($this->currentPath->getPath());
+          $matchlink[] = $this->manager->gacDisplayCount($this->currentPath->getPath(), $profile_id);
           break;
 
         case '[gac|all]':
@@ -157,7 +162,7 @@ class GoogleAnalyticsCounterFilter extends FilterBase implements ContainerFactor
 
           // Make sure the path starts with a slash.
           $path = '/' . trim($path, ' /');
-          $matchlink[] = $this->manager->displayGacCount($this->aliasManager->getAliasByPath($path));
+          $matchlink[] = $this->manager->gacDisplayCount($this->aliasManager->getAliasByPath($path), $profile_id);
           break;
       }
     }

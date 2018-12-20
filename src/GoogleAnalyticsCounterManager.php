@@ -296,34 +296,34 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    * @return \Drupal\google_analytics_counter\GoogleAnalyticsCounterFeed
    *   The returned feed after the request has been made.
    */
-  public function getChunkedResults($multiple_id = '', $index = 0) {
+  public function getChunkedResults($profile_id = '', $multiple_id = '', $index = 0) {
     $config = $this->config;
 
-    $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
-    $chunk = $config->get('general_settings.chunk_to_fetch');
+    if ($profile_id) {
+      $step = $this->state->get('google_analytics_counter.data_step_' . $profile_id);
+      $chunk = $config->get("general_settings.chunk_to_fetch_$profile_id");
+      // Set the pointer.
+      $pointer = $step * $chunk + 1;
 
-    // Set the pointer.
-    $pointer = $step * $chunk + 1;
+      $parameters = $this->gacGetParameters($profile_id, $config, $pointer);
 
-    $parameters = [
-      'profile_id' => 'ga:' . $profile_id,
-      'metrics' => ['ga:pageviews'],
-      'dimensions' => ['ga:pagePath'],
-      'start_date' => !empty($config->get('general_settings.fixed_start_date')) ? strtotime($config->get('general_settings.fixed_start_date')) : strtotime($config->get('general_settings.start_date')),
-      // If fixed dates are not in use, use 'tomorrow' to offset any timezone
-      // shift between the hosting and Google servers.
-      'end_date' => !empty($config->get('general_settings.fixed_end_date')) ? strtotime($config->get('general_settings.fixed_end_date')) : strtotime('tomorrow'),
-      'start_index' => $pointer,
-      'max_results' => $config->get('general_settings.chunk_to_fetch'),
-    ];
+      $cache_options = $this->gacGetCacheOptions($parameters);
 
-    $cache_options = [
-      'cid' => 'google_analytics_counter_' . md5(serialize($parameters)),
-      'expire' => self::cacheTime(),
-      'refresh' => FALSE,
-    ];
+      return $this->reportData($parameters, $cache_options);
+    }
+    else {
+      $step = $this->state->get('google_analytics_counter.data_step_' . $multiple_id);
+      $chunk = $config->get("general_settings.chunk_to_fetch_$multiple_id");
+      // Set the pointer.
+      $pointer = $step * $chunk + 1;
 
-    return $this->reportData($parameters, $cache_options);
+      $parameters = $this->gacGetParameters($multiple_id, $config, $pointer);
+
+      $cache_options = $this->gacGetCacheOptions($parameters);
+
+      return $this->reportData($parameters, $cache_options);
+    }
+
   }
 
   /**
@@ -352,12 +352,6 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
    */
   public function reportData($parameters = [], $cache_options = []) {
     $config = $this->config;
-
-    // The total number of published nodes.
-    $query = \Drupal::entityQuery('node');
-    $query->condition('status', NodeInterface::PUBLISHED);
-    $total_nodes = $query->count()->execute();
-    $this->state->set('google_analytics_counter.total_nodes', $total_nodes);
 
     $ga_feed = $this->newGaFeed();
     if (!$ga_feed) {
@@ -992,6 +986,41 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     ]);
   }
 
+  /**
+   * @param $profile_id
+   * @param $config
+   * @param $pointer
+   *
+   * @return array
+   */
+  protected function gacGetParameters($id, $config, $pointer) {
+    $parameters = [
+      'profile_id' => 'ga:' . $id,
+      'metrics' => ['ga:pageviews'],
+      'dimensions' => ['ga:pagePath'],
+      'start_date' => !empty($config->get('general_settings.fixed_start_date')) ? strtotime($config->get('general_settings.fixed_start_date')) : strtotime($config->get('general_settings.start_date')),
+      // If fixed dates are not in use, use 'tomorrow' to offset any timezone
+      // shift between the hosting and Google servers.
+      'end_date' => !empty($config->get('general_settings.fixed_end_date')) ? strtotime($config->get('general_settings.fixed_end_date')) : strtotime('tomorrow'),
+      'start_index' => $pointer,
+      'max_results' => $config->get('general_settings.chunk_to_fetch'),
+    ];
+    return $parameters;
+  }
+
+  /**
+   * @param array $parameters
+   *
+   * @return array
+   */
+  protected function gacGetCacheOptions(array $parameters) {
+    $cache_options = [
+      'cid' => 'google_analytics_counter_' . md5(serialize($parameters)),
+      'expire' => self::cacheTime(),
+      'refresh' => FALSE,
+    ];
+    return $cache_options;
+  }
 
 
 }

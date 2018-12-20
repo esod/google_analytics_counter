@@ -70,7 +70,7 @@ function google_analytics_counter_cron() {
 /**
  *
  */
-function _google_analytics_counter_cron($multiple_id = '') {
+function _google_analytics_counter_cron($profile_id = '', $multiple_id = '') {
   $config = \Drupal::config('google_analytics_counter.settings');
   $database = \Drupal::database();
 
@@ -81,7 +81,7 @@ function _google_analytics_counter_cron($multiple_id = '') {
   try {
     if (!$multiple_id) {
       // Fetch the first batch to see how many there are.
-      $results = $manager->getChunkedResults();
+      $results = $manager->getChunkedResults($profile_id);
     }
     else {
       $results = $manager->getChunkedResults($multiple_id);
@@ -116,6 +116,12 @@ function _google_analytics_counter_cron($multiple_id = '') {
     \Drupal::logger('google_analytics_counter')
       ->alert('Cron experienced a problem: ' . $e->getMessage());
   }
+
+  // Set the total number of published nodes.
+  $query = \Drupal::entityQuery('node');
+  $query->condition('status', NodeInterface::PUBLISHED);
+  $total_nodes = $query->count()->execute();
+  $this->state->set('google_analytics_counter.total_nodes', $total_nodes);
 }
 
 

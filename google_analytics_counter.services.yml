@@ -1,7 +1,10 @@
 services:
   google_analytics_counter.manager:
     class: \Drupal\google_analytics_counter\GoogleAnalyticsCounterManager
-    arguments: ['@config.factory', '@state', '@database', '@path.alias_manager', '@path.matcher', '@language_manager', '@logger.channel.google_analytics_counter', '@messenger']
+    arguments: ['@config.factory', '@state', '@database', '@path.alias_manager', '@path.matcher', '@language_manager', '@logger.channel.google_analytics_counter', '@messenger', '@google_analytics_counter.processor']
+  google_analytics_counter.processor:
+    class: Drupal\google_analytics_counter\GoogleAnalyticsCounterProcessor
+    arguments: ['@config.factory', '@queue', '@state', '@keyvalue', '@keyvalue.expirable']
   logger.channel.google_analytics_counter:
     parent: logger.channel_base
     arguments: ['google_analytics_counter']

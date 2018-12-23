@@ -104,6 +104,13 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
   protected $time;
 
   /**
+   * An array of installed and enabled projects.
+   *
+   * @var array
+   */
+  protected $projects;
+
+  /**
    * Constructs an Importer object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -149,6 +156,8 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
     if ($language_url) {
       $this->prefixes = $language_url['prefixes'];
     }
+    $this->prefixes = [];
+
   }
 
   /**
@@ -317,7 +326,7 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
       'max_results' => $config->get('general_settings.chunk_to_fetch'),
     ];
 
-    drush_print_r($parameters);
+//    drush_print_r($parameters);
 
     $cache_options = [
       'cid' => 'google_analytics_counter_' . md5(serialize($parameters)),
@@ -1096,5 +1105,56 @@ class GoogleAnalyticsCounterManager implements GoogleAnalyticsCounterManagerInte
         ->execute();
     }
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getProjects($profile_id) {
+    $records = [];
+    if (empty($this->projects)) {
+      $query = $this->connection->select('node_field_data', 'nfd');
+      $query->fields('nfd', ['nid', 'type', 'vid']);
+      $query->condition('status', NodeInterface::PUBLISHED);
+      $query->orderBy('nfd.nid', 'ASC');
+      $query->addTag('google_analytics_counter');
+      $result = $query->execute();
+
+      while ($record = $result->fetchAssoc()) {
+        $records['google_analytics_counter_worker'] = [
+          'type' => 'count',
+          'nid' => $record['nid'],
+          'bundle' => $record['type'],
+          'vid' => $record['vid'],
+          'profile_id' => $profile_id,
+
+        ];
+      }
+
+
+
+//      while ($record = $result->fetchAssoc()) {
+//        $projects['google_analytics_counter_worker'] = [
+//          'type' => 'count',
+//          'nid' => $record['nid'],
+//          'bundle' => $record['type'],
+//          'vid' => $record['vid'],
+//          'profile_id' => $profile_id,
+//
+//        ];
+
+//        dsm($records);
+
+        return $records;
+      }
+  }
+
+//      $query = $database->select('node_field_data', 'nfd');
+//      $query->fields('nfd', ['nid', 'type', 'vid']);
+//      $query->condition('status', NodeInterface::PUBLISHED);
+//      $query->addTag('google_analytics_counter');
+//      $result = $query->execute();
+//      while ($record = $result->fetchAssoc()) {
+//        $queue->createItem([
+
 
 }

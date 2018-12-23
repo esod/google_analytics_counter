@@ -109,13 +109,24 @@ function _gac_cron_multiple_profile_ids(array $profile_ids) {
       }
 
       // Select all the published nodes and create queue count items.
-      $query = $database->select('node_field_data', 'nfd');
-      $query->fields('nfd', ['nid', 'type', 'vid']);
-      $query->condition('status', NodeInterface::PUBLISHED);
-      $query->addTag('google_analytics_counter');
-      $result = $query->execute();
-      while ($record = $result->fetchAssoc()) {
-        $queue->createItem([
+//      $query = $database->select('node_field_data', 'nfd');
+//      $query->fields('nfd', ['nid', 'type', 'vid']);
+//      $query->condition('status', NodeInterface::PUBLISHED);
+//      $query->orderBy('nfd.nid', 'ASC');
+//      $query->addTag('google_analytics_counter');
+//      $projects = $query->execute()->fetchAllAssoc('nid');
+
+      $records = \Drupal::service('google_analytics_counter.manager')->getProjects($profile_id);
+
+
+      foreach ($records as $key => $record) {
+//        $project = (array) $project;
+//        drush_print($project['nid']);
+
+//        \Drupal::service('google_analytics_counter.processor')->createFetchTask($project, $profile_id);
+                \Drupal::service('google_analytics_counter.processor')->createFetchTask([
+//////        $queue->createItem([
+////          'name' => 'google_analytics_counter_worker',
           'type' => 'count',
           'nid' => $record['nid'],
           'bundle' => $record['type'],
